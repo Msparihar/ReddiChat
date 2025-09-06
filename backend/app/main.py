@@ -21,10 +21,17 @@ cors_origins = []
 if settings.CORS_ORIGINS:
     cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
 
+# Default localhost origins for development
+default_origins = [
+    "http://localhost:5173",  # Vite default
+    "http://localhost:8080",  # Docker/Cloud Run port
+    "http://localhost:3000",  # Common React port
+]
+
 # Add CORS middleware with specific origins for production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins if cors_origins else ["http://localhost:5173"],
+    allow_origins=cors_origins if cors_origins else default_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],

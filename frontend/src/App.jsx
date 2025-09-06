@@ -43,6 +43,13 @@ function App() {
     const accessToken = urlParams.get('access_token')
     const currentPath = window.location.pathname
 
+    console.log('=== OAuth Callback Check ===')
+    console.log('Current URL:', window.location.href)
+    console.log('Current path:', currentPath)
+    console.log('URL search params:', window.location.search)
+    console.log('Access token found:', !!accessToken)
+    console.log('Port:', window.location.port)
+
     if (accessToken) {
       console.log('Found access token in URL:', accessToken.substring(0, 20) + '...')
       // Remove token from URL for security
@@ -51,6 +58,7 @@ function App() {
       // Fetch user data and login user
       AuthService.getCurrentUser(accessToken)
         .then(userData => {
+          console.log('Successfully fetched user data:', userData)
           login(userData, accessToken)
         })
         .catch(error => {
@@ -71,6 +79,8 @@ function App() {
           console.error('Failed to fetch user data with cookie:', error)
           logout()
         })
+    } else {
+      console.log('No OAuth callback detected - normal page load')
     }
   }, [login, logout])
 

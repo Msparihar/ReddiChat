@@ -9,6 +9,7 @@ from app.models.user import OAuthProvider, User
 from datetime import timedelta
 import secrets
 import httpx
+from urllib.parse import urlparse
 from loguru import logger
 
 router = APIRouter(
@@ -18,7 +19,7 @@ router = APIRouter(
 )
 
 # In a production environment, this should be stored in a database
-oauth_states = {}
+oauth_states = {}  # Format: {state: {"provider": str, "frontend_origin": str}}
 
 
 async def exchange_code_for_token(provider: str, code: str) -> dict:
@@ -112,8 +113,11 @@ async def login(provider: OAuthProvider, request: Request):
     Initiate OAuth login flow for the specified provider
     """
     logger.info(f"=== OAuth login initiated for provider: {provider.value} ===")
-    logger.info(f"Request headers: {dict(request.headers)}")
     logger.info(f"Request URL: {request.url}")
+    logger.info(f"Referer header: {request.headers.get('referer')}")
+    logger.info(f"Origin header: {request.headers.get('origin')}")
+    logger.info(f"Host header: {request.headers.get('host')}")
+    logger.info(f"All headers: {dict(request.headers)}")
 
     if provider.value not in OAUTH_CONFIG:
         logger.error(f"Unsupported OAuth provider: {provider.value}")
@@ -121,9 +125,24 @@ async def login(provider: OAuthProvider, request: Request):
 
     config = OAUTH_CONFIG[provider.value]
 
+    # Extract frontend origin from request headers
+    frontend_origin = (
+        request.headers.get("referer")
+        or request.headers.get("origin")
+        or settings.FRONTEND_URL
+        or "http://localhost:5173"
+    )
+
+    # Clean up the origin (remove trailing slash and path if present)
+    if frontend_origin:
+        parsed = urlparse(frontend_origin)
+        frontend_origin = f"{parsed.scheme}://{parsed.netloc}"
+
+    logger.info(f"Detected frontend origin: {frontend_origin}")
+
     # Generate a random state parameter for security
     state = secrets.token_urlsafe(32)
-    oauth_states[state] = provider.value
+    oauth_states[state] = {"provider": provider.value, "frontend_origin": frontend_origin}
 
     # Construct the authorization URL
     auth_url = (
@@ -152,9 +171,18 @@ async def oauth_callback(
     logger.info(f"Available states: {list(oauth_states.keys())}")
 
     # Verify the state parameter
-    if state not in oauth_states or oauth_states[state] != provider.value:
-        logger.error(f"Invalid state parameter. Expected: {oauth_states.get(state)}, Got: {provider.value}")
+    if state not in oauth_states:
+        logger.error(f"State parameter not found: {state}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state parameter")
+
+    state_data = oauth_states[state]
+    if state_data["provider"] != provider.value:
+        logger.error(f"Invalid state parameter. Expected provider: {state_data['provider']}, Got: {provider.value}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state parameter")
+
+    # Get the frontend origin from state data
+    frontend_origin = state_data["frontend_origin"]
+    logger.info(f"Using frontend origin from state: {frontend_origin}")
 
     # Remove the state from the store
     del oauth_states[state]
@@ -215,8 +243,7 @@ async def oauth_callback(
 
         # Set secure cookie with session token
         # For localhost development, don't require secure (HTTPS)
-        is_localhost = "localhost" in (settings.FRONTEND_URL or "localhost")
-        frontend_url = settings.FRONTEND_URL or "http://localhost:5173"
+        is_localhost = "localhost" in frontend_origin
 
         logger.info(f"OAuth callback successful for user: {user.email}")
         logger.info(f"Setting cookie - is_localhost: {is_localhost}, secure: {not is_localhost}")
@@ -224,8 +251,8 @@ async def oauth_callback(
         logger.info(f"Cookie settings - secure: {not is_localhost}, samesite: {'lax' if is_localhost else 'none'}")
 
         # Send token in URL for now (works universally)
-        redirect_url = f"{frontend_url}?access_token={session_token}"
-        logger.info(f"Redirecting with token in URL to: {frontend_url}?access_token=...")
+        redirect_url = f"{frontend_origin}?access_token={session_token}"
+        logger.info(f"Redirecting with token in URL to: {frontend_origin}?access_token=...")
         return RedirectResponse(url=redirect_url)
     except HTTPException:
         # Re-raise HTTP exceptions
