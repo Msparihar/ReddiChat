@@ -1,0 +1,16 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "ReddiChat Backend - Chat APIs with FastAPI, SQLAlchemy, and LangGraph"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[all]>=0.116.1",
+    "sqlalchemy>=2.0.0",
+    "langgraph>=0.0.8",
+    "langchain-google-genai>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "uvicorn>=0.24.0",
+    "pydantic-settings>=2.0.0",
+    "python-jose>=3.3.0",
+]

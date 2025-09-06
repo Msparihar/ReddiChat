@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat Test</title>
+  </head>
+  <body>
+    <h1>Chat Test</h1>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type your message here" />
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+      // API Base URL from environment variable
+      const API_BASE_URL =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+          ? "http://localhost:8000"
+          : window.location.protocol +
+            "//" +
+            window.location.hostname +
+            ":8000";
+
+      async function sendMessage() {
+        const input = document.getElementById("messageInput");
+        const message = input.value;
+        if (!message) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/chat/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: message,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          displayMessage("User: " + message);
+          displayMessage("AI: " + data.response);
+          input.value = "";
+        } catch (error) {
+          console.error("Error sending message:", error);
+          displayMessage("Error: " + error.message);
+        }
+      }
+
+      function displayMessage(message) {
+        const messagesDiv = document.getElementById("messages");
+        const messageElement = document.createElement("div");
+        messageElement.textContent = message;
+        messagesDiv.appendChild(messageElement);
+      }
+
+      // Allow sending message with Enter key
+      document
+        .getElementById("messageInput")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            sendMessage();
+          }
+        });
+    </script>
+  </body>
+</html>
