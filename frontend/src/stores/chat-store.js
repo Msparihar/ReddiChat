@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth-store";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://reddichat-backend-267146955755.us-east1.run.app";
 
 export const useChatStore = create((set, get) => ({
   threads: [],

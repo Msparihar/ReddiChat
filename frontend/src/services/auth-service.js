@@ -1,5 +1,6 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://reddichat-backend-267146955755.us-east1.run.app";
 
 class AuthService {
   // Get current user info

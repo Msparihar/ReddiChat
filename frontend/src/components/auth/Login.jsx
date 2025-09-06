@@ -8,7 +8,7 @@ const Login = () => {
   const handleGoogleLogin = () => {
     console.log('Google login button clicked!')
     // Use localhost for local development
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://reddichat-backend-267146955755.us-east1.run.app"
     console.log('API Base URL:', apiBaseUrl)
     console.log('Redirecting to:', `${apiBaseUrl}/api/v1/auth/login/google`)
     window.location.href = `${apiBaseUrl}/api/v1/auth/login/google`
@@ -17,7 +17,7 @@ const Login = () => {
   // Handle GitHub OAuth login
   const handleGithubLogin = () => {
     // Use localhost for local development
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://reddichat-backend-267146955755.us-east1.run.app"
     window.location.href = `${apiBaseUrl}/api/v1/auth/login/github`
   }
 

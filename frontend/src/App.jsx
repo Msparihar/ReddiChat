@@ -19,6 +19,7 @@ function App() {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL)
         console.log('Initializing auth...')
         // Try to fetch user data (with stored token if available)
         const userData = await AuthService.getCurrentUser(token)
