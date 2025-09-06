@@ -1,27 +1,19 @@
 FROM python:3.12-slim
 
-ENV PYTHONUNBUFFERED=1
+RUN apt-get update && \
+    apt-get install -y build-essential libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app/
+RUN pip install uv
 
-COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /uvx /bin/
+WORKDIR /app
 
-ENV PATH="/app/.venv/bin:$PATH"
+COPY pyproject.toml uv.lock* ./
 
-ENV UV_COMPILE_BYTECODE=1
+RUN uv sync
 
-ENV UV_LINK_MODE=copy
+COPY . /app
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project
+EXPOSE 8000
 
-ENV PYTHONPATH=/app
-
-COPY . /app/
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync
-
-CMD ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "8000", "--host", "0.0.0.0"]
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
