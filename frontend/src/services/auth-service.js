@@ -3,15 +3,34 @@ const API_BASE_URL =
 
 class AuthService {
   // Get current user info
-  static async getCurrentUser(token) {
+  static async getCurrentUser(token = null) {
     try {
+      console.log("=== AuthService.getCurrentUser called ===");
+      console.log("Token passed:", token);
+      console.log("API_BASE_URL:", API_BASE_URL);
+      console.log("Document cookies:", document.cookie);
+      console.log(
+        "Cookies available:",
+        document.cookie.split(";").map((c) => c.trim())
+      );
+
+      const requestHeaders = {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      };
+      console.log("Request headers:", requestHeaders);
+
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: requestHeaders,
+        credentials: "include", // Include cookies for cross-site requests
       });
+
+      console.log("getCurrentUser response status:", response.status);
+      console.log(
+        "Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -26,14 +45,15 @@ class AuthService {
   }
 
   // Logout user
-  static async logout(token) {
+  static async logout(token = null) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
+        credentials: "include", // Include cookies for cross-site requests
       });
 
       if (!response.ok) {
@@ -49,7 +69,7 @@ class AuthService {
   }
 
   // Get user's conversation history
-  static async getConversationHistory(token, page = 1, size = 10) {
+  static async getConversationHistory(token = null, page = 1, size = 10) {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/chat/history/conversations?page=${page}&size=${size}`,
@@ -57,8 +77,9 @@ class AuthService {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
+          credentials: "include", // Include cookies for cross-site requests
         }
       );
 
@@ -75,7 +96,7 @@ class AuthService {
   }
 
   // Get conversation details
-  static async getConversationDetails(token, conversationId) {
+  static async getConversationDetails(conversationId, token = null) {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/chat/history/conversations/${conversationId}`,
@@ -83,8 +104,9 @@ class AuthService {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
+          credentials: "include", // Include cookies for cross-site requests
         }
       );
 
@@ -101,7 +123,7 @@ class AuthService {
   }
 
   // Delete conversation
-  static async deleteConversation(token, conversationId) {
+  static async deleteConversation(conversationId, token = null) {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/chat/history/conversations/${conversationId}`,
@@ -109,8 +131,9 @@ class AuthService {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
+          credentials: "include", // Include cookies for cross-site requests
         }
       );
 

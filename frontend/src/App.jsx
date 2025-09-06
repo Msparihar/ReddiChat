@@ -18,30 +18,34 @@ function App() {
   // Check if user is authenticated and fetch user data
   useEffect(() => {
     const initializeAuth = async () => {
-      if (token) {
-        try {
-          // Fetch user data
-          const userData = await AuthService.getCurrentUser(token)
-          login(userData, token)
-        } catch (error) {
-          console.error('Failed to fetch user data:', error)
-          // If there's an error fetching user data, logout
-          logout()
-        }
+      try {
+        console.log('Initializing auth...')
+        // Try to fetch user data (with stored token if available)
+        const userData = await AuthService.getCurrentUser(token)
+        console.log('User data fetched:', userData)
+        login(userData, token)
+      } catch (error) {
+        console.error('Failed to fetch user data:', error)
+        // If there's an error fetching user data, logout
+        logout()
+      } finally {
+        console.log('Auth initialization complete, setting loading to false')
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
 
     initializeAuth()
   }, [token, login, logout])
 
-  // Handle OAuth callback
+  // Handle OAuth callback (both URL token and /auth/success)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const accessToken = urlParams.get('access_token')
+    const currentPath = window.location.pathname
 
     if (accessToken) {
-      // Remove token from URL
+      console.log('Found access token in URL:', accessToken.substring(0, 20) + '...')
+      // Remove token from URL for security
       window.history.replaceState({}, document.title, "/")
 
       // Fetch user data and login user
@@ -50,8 +54,21 @@ function App() {
           login(userData, accessToken)
         })
         .catch(error => {
-          console.error('Failed to fetch user data:', error)
-          // If there's an error fetching user data, logout
+          console.error('Failed to fetch user data with URL token:', error)
+          logout()
+        })
+    } else if (currentPath === '/auth/success') {
+      console.log('Auth success path detected, trying cookie-based auth')
+      // Remove the success path from URL
+      window.history.replaceState({}, document.title, "/")
+
+      // Try to fetch user data with session cookie
+      AuthService.getCurrentUser()
+        .then(userData => {
+          login(userData)
+        })
+        .catch(error => {
+          console.error('Failed to fetch user data with cookie:', error)
           logout()
         })
     }

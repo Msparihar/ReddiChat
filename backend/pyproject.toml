@@ -13,4 +13,5 @@ dependencies = [
     "uvicorn>=0.24.0",
     "pydantic-settings>=2.0.0",
     "python-jose>=3.3.0",
+    "loguru>=0.7.3",
 ]

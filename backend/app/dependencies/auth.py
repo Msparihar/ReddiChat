@@ -8,14 +8,22 @@ import uuid
 
 async def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     """
-    Dependency to get the current authenticated user from JWT token
+    Dependency to get the current authenticated user from JWT token (Authorization header or cookie)
     """
-    # Extract token from Authorization header
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid authorization header")
+    token = None
 
-    token = auth_header.split(" ")[1]
+    # Try to get token from Authorization header first
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+
+    # If no auth header, try to get token from cookie
+    if not token:
+        token = request.cookies.get("session")
+
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing authentication token")
+
     auth_service = AuthService(db)
 
     # Verify and decode the JWT token

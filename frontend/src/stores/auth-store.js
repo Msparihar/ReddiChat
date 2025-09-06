@@ -8,8 +8,8 @@ const useAuthStore = create(
       token: null,
       isAuthenticated: false,
 
-      // Login action
-      login: (userData, token) =>
+      // Login action (supports both token and cookie-based auth)
+      login: (userData, token = null) =>
         set({
           user: userData,
           token: token,
@@ -26,12 +26,8 @@ const useAuthStore = create(
 
       // Check if user is authenticated
       checkAuth: () => {
-        const { token } = get();
-        if (!token) return false;
-
-        // In a real implementation, you would check if the token is still valid
-        // For now, we'll just return true if token exists
-        return true;
+        const { isAuthenticated } = get();
+        return isAuthenticated;
       },
     }),
     {

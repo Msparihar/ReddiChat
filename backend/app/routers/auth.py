@@ -1,15 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
 from app.services.auth_service import AuthService
-from app.schemas.auth import OAuthLogin, Token, User as UserSchema, UserCreate
+from app.schemas.auth import User as UserSchema, UserCreate
 from app.models.user import OAuthProvider, User
 from datetime import timedelta
 import secrets
-import os
 import httpx
+from loguru import logger
 
 router = APIRouter(
     prefix="/auth",
@@ -111,7 +111,12 @@ async def login(provider: OAuthProvider, request: Request):
     """
     Initiate OAuth login flow for the specified provider
     """
+    logger.info(f"=== OAuth login initiated for provider: {provider.value} ===")
+    logger.info(f"Request headers: {dict(request.headers)}")
+    logger.info(f"Request URL: {request.url}")
+
     if provider.value not in OAUTH_CONFIG:
+        logger.error(f"Unsupported OAuth provider: {provider.value}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported OAuth provider")
 
     config = OAUTH_CONFIG[provider.value]
@@ -135,12 +140,20 @@ async def login(provider: OAuthProvider, request: Request):
 
 
 @router.get("/callback/{provider}")
-async def oauth_callback(provider: OAuthProvider, code: str, state: str, db: Session = Depends(get_db)):
+async def oauth_callback(
+    provider: OAuthProvider, code: str, state: str, response: Response, db: Session = Depends(get_db)
+):
     """
     Handle OAuth callback from the provider
     """
+    logger.info(f"=== OAuth callback received for provider: {provider.value} ===")
+    logger.info(f"Code: {code[:20]}...")
+    logger.info(f"State: {state}")
+    logger.info(f"Available states: {list(oauth_states.keys())}")
+
     # Verify the state parameter
     if state not in oauth_states or oauth_states[state] != provider.value:
+        logger.error(f"Invalid state parameter. Expected: {oauth_states.get(state)}, Got: {provider.value}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state parameter")
 
     # Remove the state from the store
@@ -198,11 +211,21 @@ async def oauth_callback(provider: OAuthProvider, code: str, state: str, db: Ses
 
         # Create access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = auth_service.create_access_token(data={"sub": str(user.id)}, expires_delta=access_token_expires)
+        session_token = auth_service.create_access_token(data={"sub": str(user.id)}, expires_delta=access_token_expires)
 
-        # Redirect user back to frontend with access token
+        # Set secure cookie with session token
+        # For localhost development, don't require secure (HTTPS)
+        is_localhost = "localhost" in (settings.FRONTEND_URL or "localhost")
         frontend_url = settings.FRONTEND_URL or "http://localhost:5173"
-        redirect_url = f"{frontend_url}?access_token={access_token}"
+
+        logger.info(f"OAuth callback successful for user: {user.email}")
+        logger.info(f"Setting cookie - is_localhost: {is_localhost}, secure: {not is_localhost}")
+        logger.info(f"Session token length: {len(session_token)}, starts with: {session_token[:20]}...")
+        logger.info(f"Cookie settings - secure: {not is_localhost}, samesite: {'lax' if is_localhost else 'none'}")
+
+        # Send token in URL for now (works universally)
+        redirect_url = f"{frontend_url}?access_token={session_token}"
+        logger.info(f"Redirecting with token in URL to: {frontend_url}?access_token=...")
         return RedirectResponse(url=redirect_url)
     except HTTPException:
         # Re-raise HTTP exceptions
@@ -220,12 +243,31 @@ async def read_users_me(request: Request, db: Session = Depends(get_db)):
     """
     Get current user information
     """
-    # Extract token from Authorization header
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid authorization header")
+    logger.info("=== /me endpoint called ===")
+    logger.info(f"Request headers: {dict(request.headers)}")
+    logger.info(f"Request cookies: {dict(request.cookies)}")
 
-    token = auth_header.split(" ")[1]
+    token = None
+
+    # Try to get token from Authorization header first
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        logger.info(f"Found token in Authorization header: {token[:20]}...")
+
+    # If no auth header, try to get token from cookie
+    if not token:
+        cookie_token = request.cookies.get("session")
+        if cookie_token:
+            token = cookie_token
+            logger.info(f"Found token in session cookie: {token[:20]}...")
+        else:
+            logger.warning("No session cookie found!")
+
+    if not token:
+        logger.error("No authentication token found in headers or cookies")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing authentication token")
+
     auth_service = AuthService(db)
 
     # Verify and decode the JWT token
@@ -254,10 +296,46 @@ async def read_users_me(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/logout")
-async def logout(request: Request):
+async def logout(request: Request, response: Response):
     """
     Logout the current user
     """
-    # In a real implementation, you would invalidate the token
-    # For now, we'll just return a success message
+    # Clear the session cookie
+    # For localhost development, don't require secure (HTTPS)
+    is_localhost = "localhost" in (settings.FRONTEND_URL or "localhost")
+    response.delete_cookie(
+        key="session",
+        path="/",
+        secure=not is_localhost,
+        httponly=True,
+        samesite="lax" if is_localhost else "none",
+        domain="localhost" if is_localhost else None,
+    )
+
+    # In a real implementation, you would also invalidate the token on the server side
     return {"message": "Successfully logged out"}
+
+
+@router.get("/test-cookie")
+async def test_cookie(response: Response):
+    """
+    Test endpoint to manually set a cookie and see if it works
+    """
+    logger.info("=== Test cookie endpoint called ===")
+
+    # For localhost development, don't require secure (HTTPS)
+    is_localhost = "localhost" in (settings.FRONTEND_URL or "localhost")
+
+    response.set_cookie(
+        key="test_session",
+        value="test_token_12345",
+        secure=not is_localhost,
+        httponly=True,
+        samesite="lax" if is_localhost else "none",
+        max_age=60 * 60,  # 1 hour
+        path="/",
+        domain="localhost" if is_localhost else None,
+    )
+
+    logger.info(f"Test cookie set - domain: {'localhost' if is_localhost else 'None'}")
+    return {"message": "Test cookie set", "domain": "localhost" if is_localhost else None}

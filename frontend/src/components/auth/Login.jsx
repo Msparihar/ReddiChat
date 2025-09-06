@@ -6,19 +6,26 @@ const Login = () => {
 
   // Handle Google OAuth login
   const handleGoogleLogin = () => {
-    // Redirect to backend OAuth endpoint
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login/google`
+    console.log('Google login button clicked!')
+    // Use localhost for local development
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+    console.log('API Base URL:', apiBaseUrl)
+    console.log('Redirecting to:', `${apiBaseUrl}/api/v1/auth/login/google`)
+    window.location.href = `${apiBaseUrl}/api/v1/auth/login/google`
   }
 
   // Handle GitHub OAuth login
   const handleGithubLogin = () => {
-    // Redirect to backend OAuth endpoint
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/login/github`
+    // Use localhost for local development
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+    window.location.href = `${apiBaseUrl}/api/v1/auth/login/github`
   }
 
   // Check if user is already authenticated
   useEffect(() => {
+    console.log('Login component - isAuthenticated:', isAuthenticated)
     if (isAuthenticated) {
+      console.log('User is authenticated, redirecting to chat page')
       // Redirect to chat page
       window.location.href = '/'
     }
