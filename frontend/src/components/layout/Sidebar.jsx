@@ -9,7 +9,17 @@ import { cn } from '../../lib/utils'
 const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUIStore()
   const { createNewThread, toggleSettings } = useChatStore()
-  const { logout } = useAuthStore()
+  const { user, logout } = useAuthStore()
+
+  // Function to get user initials
+  const getUserInitials = (name) => {
+    if (!name) return 'U'
+    const parts = name.split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return name[0].toUpperCase()
+  }
 
  const handleNewChat = () => {
     createNewThread()
@@ -117,11 +127,11 @@ const Sidebar = () => {
             aria-label="Open settings"
           >
             <div className="w-7 h-7 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-medium">M</span>
+              <span className="text-xs font-medium">{getUserInitials(user?.name)}</span>
             </div>
             {isSidebarOpen && (
               <div className="flex-1 min-w-0">
-              <div className="text-sm font-normal truncate">Manish Singh Parihar</div>
+              <div className="text-sm font-normal truncate">{user?.name || 'Guest User'}</div>
               <div className="text-xs text-gray-500">Free</div>
               </div>
             )}

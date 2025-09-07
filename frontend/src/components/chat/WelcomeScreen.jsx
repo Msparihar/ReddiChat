@@ -1,8 +1,10 @@
 import { Sparkles, BookOpen, Code, Lightbulb } from 'lucide-react'
 import { useChatStore } from '../../stores/chat-store'
+import { useAuthStore } from '../../stores/auth-store'
 
 const WelcomeScreen = () => {
   const { sendMessage } = useChatStore()
+  const { user } = useAuthStore()
 
   const suggestedPrompts = [
     "How does AI work?",
@@ -26,7 +28,7 @@ const WelcomeScreen = () => {
     <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-3xl mx-auto overflow-y-auto">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-normal mb-6">
-          How can I help you, Manish?
+          How can I help you{user?.name ? `, ${user.name.split(' ')[0]}` : ''}?
         </h1>
       </div>
 
