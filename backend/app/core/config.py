@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Server Configuration
     PORT: int = int(os.getenv("PORT", 8000))
 
+    REDDIT_CLIENT_ID: Optional[str] = os.getenv("REDDIT_CLIENT_ID")
+    REDDIT_CLIENT_SECRET: Optional[str] = os.getenv("REDDIT_CLIENT_SECRET")
+
     class Config:
         case_sensitive = True
         env_file = ".env"

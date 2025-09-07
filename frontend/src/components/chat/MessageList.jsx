@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useChatStore } from '../../stores/chat-store'
 import { cn } from '../../lib/utils'
+import RedditSource from './RedditSource'
 
 const MessageList = () => {
   const { messages, isLoading } = useChatStore()
@@ -41,24 +42,43 @@ const MessageList = () => {
               </div>
             )}
 
-            <div
-              className={cn(
-                "max-w-2xl px-3 py-2.5 rounded-lg",
-                message.role === 'user'
-                  ? 'bg-blue-600 text-white ml-auto'
-                  : 'bg-gray-850 text-gray-100 border border-gray-700'
-              )}
-            >
-              <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                {message.content}
+            <div className="max-w-2xl">
+              <div
+                className={cn(
+                  "px-3 py-2.5 rounded-lg",
+                  message.role === 'user'
+                    ? 'bg-blue-600 text-white ml-auto'
+                    : 'bg-gray-850 text-gray-100 border border-gray-700'
+                )}
+              >
+                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {message.content}
+                </div>
+
+                <div className="text-xs opacity-60 mt-1.5">
+                  {message.timestamp.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                  {message.tool_used && (
+                    <span className="ml-2 text-blue-400">
+                      • Used {message.tool_used === 'search_reddit' ? 'Reddit Search' : message.tool_used}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="text-xs opacity-60 mt-1.5">
-                {message.timestamp.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </div>
+              {/* Display Reddit sources if available */}
+              {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <div className="text-xs font-medium text-gray-400 mb-2">
+                    Sources from Reddit:
+                  </div>
+                  {message.sources.map((source, index) => (
+                    <RedditSource key={index} source={source} index={index} />
+                  ))}
+                </div>
+              )}
             </div>
 
             {message.role === 'user' && (

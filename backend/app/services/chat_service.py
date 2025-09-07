@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.chat import Conversation, Message, MessageRole
 from app.models.user import User
-from app.schemas.chat import ChatRequest, ChatResponse, ConversationCreate, MessageCreate
+from app.schemas.chat import ChatRequest, ChatResponse, ConversationCreate, MessageCreate, RedditSource
 from app.agents import get_chat_response
 import uuid
 from typing import List, Optional
@@ -23,10 +23,11 @@ class ChatService:
             Conversation: The conversation object
         """
         if conversation_id:
-            conversation = self.db.query(Conversation).filter(
-                Conversation.id == conversation_id,
-                Conversation.user_id == self.user.id
-            ).first()
+            conversation = (
+                self.db.query(Conversation)
+                .filter(Conversation.id == conversation_id, Conversation.user_id == self.user.id)
+                .first()
+            )
             if conversation:
                 return conversation
 
@@ -55,7 +56,14 @@ class ChatService:
             .all()
         )
 
-    def save_message(self, conversation_id: uuid.UUID, content: str, role: MessageRole) -> Message:
+    def save_message(
+        self,
+        conversation_id: uuid.UUID,
+        content: str,
+        role: MessageRole,
+        sources: Optional[List[dict]] = None,
+        tool_used: Optional[str] = None,
+    ) -> Message:
         """
         Save a message to the database
 
@@ -63,11 +71,13 @@ class ChatService:
             conversation_id: The conversation ID
             content: The message content
             role: The message role (user/assistant)
+            sources: Optional list of Reddit sources
+            tool_used: Optional tool that was used
 
         Returns:
             Message: The saved message
         """
-        message_data = MessageCreate(content=content, role=role)
+        message_data = MessageCreate(content=content, role=role, sources=sources or [], tool_used=tool_used)
         db_message = Message(**message_data.model_dump(), conversation_id=conversation_id, user_id=self.user.id)
         self.db.add(db_message)
         self.db.commit()
@@ -99,10 +109,17 @@ class ChatService:
         ]
 
         # Get response from the agent
-        agent_response = get_chat_response(formatted_history)
+        agent_result = get_chat_response(formatted_history)
 
-        # Save agent message
-        agent_message = self.save_message(conversation.id, agent_response, MessageRole.ASSISTANT)
+        # Extract response content and sources
+        agent_response_content = agent_result.get("content", "")
+        agent_sources = agent_result.get("sources", [])
+        tool_used = agent_result.get("tool_used")
+
+        # Save agent message with sources
+        agent_message = self.save_message(
+            conversation.id, agent_response_content, MessageRole.ASSISTANT, sources=agent_sources, tool_used=tool_used
+        )
 
         # Update conversation title if it's the first message
         if len(history) == 1:  # Only the user message we just added
@@ -116,4 +133,30 @@ class ChatService:
         self.db.commit()
         self.db.refresh(conversation)
 
-        return ChatResponse(response=agent_response, conversation_id=conversation.id)
+        # Convert agent sources to RedditSource objects
+        reddit_sources = []
+        if agent_sources:
+            for source in agent_sources:
+                try:
+                    reddit_source = RedditSource(
+                        title=source.get("title", ""),
+                        text=source.get("text", ""),
+                        url=source.get("url", ""),
+                        subreddit=source.get("subreddit", ""),
+                        author=source.get("author", ""),
+                        score=source.get("score", 0),
+                        num_comments=source.get("num_comments", 0),
+                        created_utc=source.get("created_utc", ""),
+                        permalink=source.get("permalink", ""),
+                    )
+                    reddit_sources.append(reddit_source)
+                except Exception as e:
+                    # Log error but continue with other sources
+                    print(f"Error processing Reddit source: {e}")
+
+        return ChatResponse(
+            response=agent_response_content,
+            conversation_id=conversation.id,
+            sources=reddit_sources,
+            tool_used=tool_used,
+        )

@@ -121,7 +121,7 @@ async def get_conversation_detail(
         # Convert to Pydantic model for proper serialization
         from app.schemas.chat import Conversation as ConversationSchema
 
-        return ConversationSchema.from_orm(conversation)
+        return ConversationSchema.model_validate(conversation)
     except HTTPException:
         # Re-raise HTTP exceptions
         raise

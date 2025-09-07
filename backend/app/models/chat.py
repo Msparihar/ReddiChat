@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -39,6 +39,10 @@ class Message(Base):
     content = Column(Text, nullable=False)
     role = Column(Enum(MessageRole, values_callable=lambda obj: [e.value for e in obj]), nullable=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+    # New fields for Reddit sources and tool usage
+    sources = Column(JSON, nullable=True)  # Store Reddit sources as JSON
+    tool_used = Column(String, nullable=True)  # Store which tool was used
 
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")

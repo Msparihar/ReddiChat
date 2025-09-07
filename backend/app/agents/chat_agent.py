@@ -1,11 +1,14 @@
 from typing import Annotated
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.types import Command
 from app.core.config import settings
+from app.tools.reddit_tool import search_reddit
 import os
+import json
 
 # Initialize the Gemini LLM
 # Note: Make sure to set the GEMINI_API_KEY environment variable
@@ -52,8 +55,14 @@ def get_current_weather(location: str) -> str:
     return f"The current weather in {location} is sunny with a temperature of 25°C."
 
 
+# Define all available tools
+tools = [search_reddit, get_current_weather]
+
+# Create tool node for LangGraph
+tool_node = ToolNode(tools)
+
 # Create the agent with tools
-agent_with_tools = llm.bind_tools([get_current_weather]) if hasattr(llm, "bind_tools") else llm
+agent_with_tools = llm.bind_tools(tools) if hasattr(llm, "bind_tools") else llm
 
 
 def call_model(state: MessagesState):
@@ -67,16 +76,18 @@ graph = StateGraph(MessagesState)
 
 # Add nodes
 graph.add_node("call_model", call_model)
+graph.add_node("tools", tool_node)
 
 # Add edges
 graph.add_edge(START, "call_model")
-graph.add_edge("call_model", END)
+graph.add_conditional_edges("call_model", tools_condition, {"tools": "tools", "__end__": END})
+graph.add_edge("tools", "call_model")
 
 # Compile the graph
 app = graph.compile()
 
 
-def get_chat_response(messages: list) -> str:
+def get_chat_response(messages: list) -> dict:
     """
     Get a response from the chat agent
 
@@ -84,7 +95,7 @@ def get_chat_response(messages: list) -> str:
         messages: List of messages in the conversation
 
     Returns:
-        str: The agent's response
+        dict: The agent's response with content and any sources
     """
     # Convert messages to the format expected by LangGraph
     langgraph_messages = []
@@ -97,8 +108,30 @@ def get_chat_response(messages: list) -> str:
     # Invoke the agent
     result = app.invoke({"messages": langgraph_messages})
 
-    # Extract the last message from the result
-    last_message = result["messages"][-1]
+    # Extract messages from the result
+    result_messages = result["messages"]
 
-    # Return the content of the last message
-    return last_message.content if hasattr(last_message, "content") else str(last_message)
+    # Find the final AI response and any tool messages
+    final_response = None
+    tool_results = []
+    tool_used = None
+
+    for message in result_messages:
+        if isinstance(message, AIMessage) and message.content:
+            final_response = message.content
+        elif isinstance(message, ToolMessage):
+            try:
+                tool_data = json.loads(message.content)
+                if message.name == "search_reddit":
+                    tool_used = "search_reddit"
+                    tool_results.extend(tool_data.get("posts", []))
+            except (json.JSONDecodeError, AttributeError):
+                # Handle cases where tool content isn't valid JSON
+                pass
+
+    # If no final response found, get the last message
+    if final_response is None:
+        last_message = result_messages[-1]
+        final_response = last_message.content if hasattr(last_message, "content") else str(last_message)
+
+    return {"content": final_response, "sources": tool_results, "tool_used": tool_used}

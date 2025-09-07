@@ -124,7 +124,7 @@ class AuthService {
   }
 
   // Delete conversation
-  static async deleteConversation(conversationId, token = null) {
+  static async deleteConversation(token, conversationId) {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/chat/history/conversations/${conversationId}`,
@@ -139,7 +139,10 @@ class AuthService {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status} - ${errorText}`
+        );
       }
 
       const result = await response.json();

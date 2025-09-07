@@ -9,7 +9,7 @@ import { format } from 'date-fns'
 const ConversationHistory = () => {
   const { token } = useAuthStore()
   const { isSidebarOpen } = useUIStore()
-  const { loadConversation, currentThread, syncThreadsWithAPI } = useChatStore()
+  const { loadConversation, currentThread, syncThreadsWithAPI, deleteThread, initializeConversation } = useChatStore()
   const [conversations, setConversations] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingConversation, setLoadingConversation] = useState(null)
@@ -73,23 +73,66 @@ const ConversationHistory = () => {
 
   // Handle conversation deletion
   const handleDeleteConversation = async (conversationId) => {
+    if (!conversationId) {
+      console.error('Cannot delete conversation: Invalid conversation ID')
+      setError('Cannot delete conversation: Invalid ID')
+      setShowDeleteConfirm(null)
+      return
+    }
+
+    if (!token) {
+      console.error('Cannot delete conversation: No authentication token')
+      setError('Cannot delete conversation: Not authenticated')
+      setShowDeleteConfirm(null)
+      return
+    }
+
     try {
       setDeletingConversation(conversationId)
-      await AuthService.deleteConversation(token, conversationId)
+      console.log(`Attempting to delete conversation: ${conversationId}`)
 
-      // Remove conversation from local state
-      setConversations(conversations.filter(conv => conv.id !== conversationId))
+      // Call the API to delete the conversation
+      const result = await AuthService.deleteConversation(token, conversationId)
+      console.log('Delete API response:', result)
 
-      // If the deleted conversation was currently active, clear it
+      // Update local state - remove from conversations list
+      setConversations(prevConversations => {
+        const filtered = prevConversations.filter(conv => conv.id !== conversationId)
+        console.log(`Removed conversation from local state. Remaining: ${filtered.length}`)
+        return filtered
+      })
+
+      // Remove from chat store threads
+      deleteThread(conversationId)
+      console.log('Removed conversation from chat store')
+
+      // If the deleted conversation was currently active, initialize a new conversation
       if (currentThread?.id === conversationId) {
-        // Clear current thread - you might want to add this to the chat store
-        // For now, we'll just rely on the user selecting a new conversation
+        console.log('Deleted conversation was active, initializing new conversation')
+        initializeConversation()
       }
 
+      // Clear error state and hide confirmation dialog
+      setError(null)
       setShowDeleteConfirm(null)
+
+      console.log(`✅ Conversation ${conversationId} deleted successfully`)
     } catch (error) {
-      console.error('Failed to delete conversation:', error)
-      setError(`Failed to delete conversation: ${error.message}`)
+      console.error('❌ Failed to delete conversation:', error)
+
+      // Provide more specific error messages
+      let errorMessage = 'Failed to delete conversation'
+      if (error.message.includes('404')) {
+        errorMessage = 'Conversation not found or already deleted'
+      } else if (error.message.includes('403')) {
+        errorMessage = 'You do not have permission to delete this conversation'
+      } else if (error.message.includes('401')) {
+        errorMessage = 'Authentication failed. Please log in again.'
+      } else if (error.message) {
+        errorMessage = `Failed to delete: ${error.message}`
+      }
+
+      setError(errorMessage)
       setShowDeleteConfirm(null)
     } finally {
       setDeletingConversation(null)

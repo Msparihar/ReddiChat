@@ -10,7 +10,6 @@ export const useChatStore = create((set, get) => ({
   currentThread: null,
   messages: [],
   isLoading: false,
-  currentModel: "Gemini 2.5 Flash",
 
   // State for conversation ID
   conversationId: null,
@@ -87,6 +86,8 @@ export const useChatStore = create((set, get) => ({
           role: msg.role,
           timestamp: new Date(msg.timestamp), // Convert ISO string to Date object
           conversation_id: msg.conversation_id,
+          sources: msg.sources || [],
+          tool_used: msg.tool_used || null,
         })
       );
 
@@ -221,6 +222,8 @@ export const useChatStore = create((set, get) => ({
         content: data.response,
         role: "assistant",
         timestamp: new Date(),
+        sources: data.sources || [],
+        tool_used: data.tool_used || null,
       };
 
       set((state) => {
@@ -283,8 +286,6 @@ export const useChatStore = create((set, get) => ({
       }, 1000);
     }
   },
-
-  setCurrentModel: (model) => set({ currentModel: model }),
 
   toggleSettings: () => {
     console.log("Settings toggled");

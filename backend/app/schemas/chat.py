@@ -1,8 +1,22 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, validator
+from typing import List, Optional, Union
 from datetime import datetime
 from app.models.chat import MessageRole
 import uuid
+
+
+class RedditSource(BaseModel):
+    """Reddit post source information"""
+
+    title: str
+    text: str
+    url: str
+    subreddit: str
+    author: str
+    score: int
+    num_comments: int
+    created_utc: str
+    permalink: str
 
 
 class MessageBase(BaseModel):
@@ -11,7 +25,8 @@ class MessageBase(BaseModel):
 
 
 class MessageCreate(MessageBase):
-    pass
+    sources: Optional[List[RedditSource]] = []
+    tool_used: Optional[str] = None
 
 
 class Message(MessageBase):
@@ -19,6 +34,24 @@ class Message(MessageBase):
     conversation_id: uuid.UUID
     role: MessageRole
     timestamp: datetime
+    sources: Optional[List[RedditSource]] = []
+    tool_used: Optional[str] = None
+
+    @validator("sources", pre=True)
+    def validate_sources(cls, v):
+        """Convert JSON sources to RedditSource objects"""
+        if v is None:
+            return []
+        if isinstance(v, str):
+            import json
+
+            try:
+                v = json.loads(v)
+            except json.JSONDecodeError:
+                return []
+        if isinstance(v, list):
+            return [RedditSource(**source) if isinstance(source, dict) else source for source in v]
+        return []
 
     class Config:
         from_attributes = True
@@ -50,3 +83,5 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     conversation_id: uuid.UUID
+    sources: Optional[List[RedditSource]] = []
+    tool_used: Optional[str] = None
