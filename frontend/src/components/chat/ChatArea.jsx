@@ -7,18 +7,22 @@ const ChatArea = () => {
   const { currentThread, messages } = useChatStore()
 
   return (
-    <div className="flex-1 flex flex-col h-screen">
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full">
+      {/* Chat Messages Area - Scrollable */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         {!currentThread || messages.length === 0 ? (
           <WelcomeScreen />
         ) : (
-          <MessageList />
+          <div className="h-full overflow-y-auto">
+            <MessageList />
+          </div>
         )}
       </div>
 
-      {/* Message Input */}
-      <MessageInput />
+      {/* Message Input Area - Fixed at bottom */}
+      <div className="flex-shrink-0 bg-gray-950 border-t border-gray-750">
+        <MessageInput />
+      </div>
     </div>
   )
 }

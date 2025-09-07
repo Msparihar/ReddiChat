@@ -6,16 +6,26 @@ const MessageList = () => {
   const { messages, isLoading } = useChatStore()
   const messagesEndRef = useRef(null)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, isLoading])
 
-    return (
-    <div className="flex-1 overflow-y-auto scrollbar-thin">
+  // Scroll to bottom when component mounts (for initial load)
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto' })
+        }
+      }, 100) // Small delay to ensure DOM is fully rendered
+    }
+  }, [])
+
+  return (
+    <div className="h-full scrollbar-thin">
       <div className="max-w-3xl mx-auto p-4 space-y-4">
         {messages.map((message) => (
           <div

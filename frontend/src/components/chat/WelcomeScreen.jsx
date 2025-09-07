@@ -23,7 +23,7 @@ const WelcomeScreen = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-3xl mx-auto">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-3xl mx-auto overflow-y-auto">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-normal mb-6">
           How can I help you, Manish?

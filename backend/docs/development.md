@@ -58,7 +58,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 # Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:8000/api/v1/auth/callback
+GOOGLE_REDIRECT_URI=http://localhost:8001/api/v1/auth/callback/google
+
+# GitHub OAuth (optional)
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+GITHUB_REDIRECT_URI=http://localhost:8001/api/v1/auth/callback/github
 
 # Frontend URL
 FRONTEND_URL=http://localhost:5173

@@ -32,7 +32,7 @@ const MessageInput = () => {
   }
 
     return (
-    <div className="border-t border-gray-750 bg-gray-950">
+    <div>
       <div className="max-w-3xl mx-auto p-4">
         {/* Message Input */}
         <form onSubmit={handleSubmit} className="relative">
