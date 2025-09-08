@@ -1,19 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.services.chat_service import ChatService
 from app.schemas.chat import Conversation
 from app.models.chat import Conversation as ConversationModel
 from app.dependencies.auth import get_current_user
 from app.models.user import User
-from typing import List
 import math
 import uuid
-import logging
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.core.logger import logger
 
 router = APIRouter(
     prefix="/chat/history",
@@ -23,7 +17,7 @@ router = APIRouter(
 
 
 @router.get("/conversations", response_model=dict)
-async def get_user_conversations(
+def get_user_conversations(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
     page: int = Query(1, ge=1),
@@ -42,41 +36,48 @@ async def get_user_conversations(
         dict: Paginated list of conversations with metadata
     """
     try:
+        logger.info(f"User {user.email} requesting conversations - page: {page}, size: {size}")
         # Calculate offset for pagination
         offset = (page - 1) * size
 
-        # Get total count of user's conversations
-        total_conversations = db.query(ConversationModel).filter(ConversationModel.user_id == user.id).count()
+        # Optimized query: get conversations and count in a single query transaction
+        base_query = db.query(ConversationModel).filter(ConversationModel.user_id == user.id)
 
-        # Get paginated conversations
-        conversations = (
-            db.query(ConversationModel)
-            .filter(ConversationModel.user_id == user.id)
-            .order_by(ConversationModel.updated_at.desc())
-            .offset(offset)
-            .limit(size)
-            .all()
-        )
+        # Get total count efficiently
+        total_conversations = base_query.count()
+
+        # Get paginated conversations in one optimized query
+        conversations = base_query.order_by(ConversationModel.updated_at.desc()).offset(offset).limit(size).all()
 
         # Calculate total pages
-        total_pages = math.ceil(total_conversations / size)
+        total_pages = math.ceil(total_conversations / size) if total_conversations > 0 else 1
 
-        # Convert SQLAlchemy objects to dictionaries for JSON serialization
-        conversations_data = []
-        for conv in conversations:
-            conv_dict = {
+        # Optimized conversion using list comprehension
+        conversations_data = [
+            {
                 "id": str(conv.id),
                 "title": conv.title,
                 "created_at": conv.created_at.isoformat() if conv.created_at else None,
                 "updated_at": conv.updated_at.isoformat() if conv.updated_at else None,
                 "user_id": str(conv.user_id),
             }
-            conversations_data.append(conv_dict)
+            for conv in conversations
+        ]
 
-        return {
+        result = {
             "conversations": conversations_data,
             "pagination": {"page": page, "size": size, "total": total_conversations, "pages": total_pages},
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "name": user.name,
+                "avatar_url": user.avatar_url,
+                "provider": user.provider.value if user.provider else None,
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+            },
         }
+        logger.info(f"Successfully returned {len(conversations_data)} conversations for user {user.email}")
+        return result
     except Exception as e:
         # Log unexpected errors
         logger.error(f"Unexpected error in get_user_conversations endpoint: {str(e)}")
@@ -84,7 +85,7 @@ async def get_user_conversations(
 
 
 @router.get("/conversations/{conversation_id}", response_model=Conversation)
-async def get_conversation_detail(
+def get_conversation_detail(
     conversation_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ):
     """
@@ -130,9 +131,7 @@ async def get_conversation_detail(
 
 
 @router.delete("/conversations/{conversation_id}")
-async def delete_conversation(
-    conversation_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)
-):
+def delete_conversation(conversation_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """
     Delete a conversation and all its messages
 

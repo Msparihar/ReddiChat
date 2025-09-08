@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
 
-    # Database Configuration
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./redidchat.db")
+    # Database Configuration - Prioritize PostgreSQL
+    DATABASE_URL: str = os.getenv("POSTGRES_URL", os.getenv("DATABASE_URL", "sqlite:///./redidchat.db"))
 
     # Gemini Configuration
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     class Config:
         case_sensitive = True
         env_file = ".env"
+        extra = "ignore"  # Allow extra fields from .env
 
 
 settings = Settings()

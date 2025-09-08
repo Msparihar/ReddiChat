@@ -6,9 +6,10 @@ from app.core.config import settings
 from app.services.auth_service import AuthService
 from app.schemas.auth import User as UserSchema, UserCreate
 from app.models.user import OAuthProvider, User
+from app.dependencies.auth import get_current_user
 from datetime import timedelta
 import secrets
-import httpx
+import requests
 from urllib.parse import urlparse
 from loguru import logger
 
@@ -22,7 +23,7 @@ router = APIRouter(
 oauth_states = {}  # Format: {state: {"provider": str, "frontend_origin": str}}
 
 
-async def exchange_code_for_token(provider: str, code: str) -> dict:
+def exchange_code_for_token(provider: str, code: str) -> dict:
     """
     Exchange authorization code for access token
     """
@@ -38,25 +39,24 @@ async def exchange_code_for_token(provider: str, code: str) -> dict:
     }
 
     # Make the token request
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(config["token_url"], data=data)
-            response.raise_for_status()
-            token_data = response.json()
-            return token_data
-        except httpx.HTTPError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error exchanging code for token: {str(e)}",
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Unexpected error during token exchange: {str(e)}",
-            )
+    try:
+        response = requests.post(config["token_url"], data=data)
+        response.raise_for_status()
+        token_data = response.json()
+        return token_data
+    except requests.HTTPError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error exchanging code for token: {str(e)}",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error during token exchange: {str(e)}",
+        )
 
 
-async def get_user_info(provider: str, access_token: str) -> dict:
+def get_user_info(provider: str, access_token: str) -> dict:
     """
     Fetch user information from the OAuth provider
     """
@@ -66,22 +66,21 @@ async def get_user_info(provider: str, access_token: str) -> dict:
     headers = {"Authorization": f"Bearer {access_token}"}
 
     # Make the user info request
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(config["user_info_url"], headers=headers)
-            response.raise_for_status()
-            user_info = response.json()
-            return user_info
-        except httpx.HTTPError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error fetching user info: {str(e)}",
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Unexpected error fetching user info: {str(e)}",
-            )
+    try:
+        response = requests.get(config["user_info_url"], headers=headers)
+        response.raise_for_status()
+        user_info = response.json()
+        return user_info
+    except requests.HTTPError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error fetching user info: {str(e)}",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error fetching user info: {str(e)}",
+        )
 
 
 # OAuth provider configurations
@@ -108,7 +107,7 @@ OAUTH_CONFIG = {
 
 
 @router.get("/login/{provider}")
-async def login(provider: OAuthProvider, request: Request):
+def login(provider: OAuthProvider, request: Request):
     """
     Initiate OAuth login flow for the specified provider
     """
@@ -159,9 +158,7 @@ async def login(provider: OAuthProvider, request: Request):
 
 
 @router.get("/callback/{provider}")
-async def oauth_callback(
-    provider: OAuthProvider, code: str, state: str, response: Response, db: Session = Depends(get_db)
-):
+def oauth_callback(provider: OAuthProvider, code: str, state: str, response: Response, db: Session = Depends(get_db)):
     """
     Handle OAuth callback from the provider
     """
@@ -189,14 +186,14 @@ async def oauth_callback(
 
     try:
         # Exchange the authorization code for an access token
-        token_data = await exchange_code_for_token(provider.value, code)
+        token_data = exchange_code_for_token(provider.value, code)
         access_token = token_data.get("access_token")
 
         if not access_token:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to obtain access token")
 
         # Fetch user information using the access token
-        user_info = await get_user_info(provider.value, access_token)
+        user_info = get_user_info(provider.value, access_token)
 
         # Log all user information received from OAuth provider (especially for Google)
         logger.info(f"=== User info received from {provider.value} ===")
@@ -280,64 +277,16 @@ async def oauth_callback(
 
 
 @router.get("/me", response_model=UserSchema)
-async def read_users_me(request: Request, db: Session = Depends(get_db)):
+def read_users_me(user: User = Depends(get_current_user)):
     """
     Get current user information
     """
-    logger.info("=== /me endpoint called ===")
-    logger.info(f"Request headers: {dict(request.headers)}")
-    logger.info(f"Request cookies: {dict(request.cookies)}")
-
-    token = None
-
-    # Try to get token from Authorization header first
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.split(" ")[1]
-        logger.info(f"Found token in Authorization header: {token[:20]}...")
-
-    # If no auth header, try to get token from cookie
-    if not token:
-        cookie_token = request.cookies.get("session")
-        if cookie_token:
-            token = cookie_token
-            logger.info(f"Found token in session cookie: {token[:20]}...")
-        else:
-            logger.warning("No session cookie found!")
-
-    if not token:
-        logger.error("No authentication token found in headers or cookies")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing authentication token")
-
-    auth_service = AuthService(db)
-
-    # Verify and decode the JWT token
-    payload = auth_service.verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
-
-    user_id_str = payload.get("sub")
-    if not user_id_str:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-
-    try:
-        # Convert string UUID to UUID object
-        import uuid
-
-        user_id = uuid.UUID(user_id_str)
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID format")
-
-    # Get user from database
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
+    logger.info(f"User {user.email} accessed /me endpoint")
     return user
 
 
 @router.post("/logout")
-async def logout(request: Request, response: Response):
+def logout(request: Request, response: Response):
     """
     Logout the current user
     """
@@ -358,7 +307,7 @@ async def logout(request: Request, response: Response):
 
 
 @router.get("/test-cookie")
-async def test_cookie(response: Response):
+def test_cookie(response: Response):
     """
     Test endpoint to manually set a cookie and see if it works
     """

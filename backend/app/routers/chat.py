@@ -5,11 +5,7 @@ from app.schemas.chat import ChatRequest, ChatResponse
 from app.services import ChatService
 from app.dependencies.auth import get_current_user
 from app.models.user import User
-import logging
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.core.logger import logger
 
 router = APIRouter(
     prefix="/chat",
@@ -19,7 +15,7 @@ router = APIRouter(
 
 
 @router.post("/", response_model=ChatResponse)
-async def chat(chat_request: ChatRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def chat(chat_request: ChatRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """
     Process a chat message and return the agent's response
 
@@ -45,7 +41,7 @@ async def chat(chat_request: ChatRequest, db: Session = Depends(get_db), user: U
 
 
 @router.get("/health")
-async def health_check():
+def health_check():
     """
     Health check endpoint for the chat service
 

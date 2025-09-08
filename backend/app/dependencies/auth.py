@@ -6,7 +6,7 @@ from app.models.user import User
 import uuid
 
 
-async def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     """
     Dependency to get the current authenticated user from JWT token (Authorization header or cookie)
     """

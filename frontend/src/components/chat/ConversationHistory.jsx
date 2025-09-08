@@ -7,7 +7,7 @@ import { useChatStore } from '../../stores/chat-store'
 import { format } from 'date-fns'
 
 const ConversationHistory = () => {
-  const { token } = useAuthStore()
+  const { token, login } = useAuthStore()
   const { isSidebarOpen } = useUIStore()
   const { loadConversation, currentThread, syncThreadsWithAPI, deleteThread, initializeConversation } = useChatStore()
   const [conversations, setConversations] = useState([])
@@ -31,6 +31,11 @@ const ConversationHistory = () => {
         const data = await AuthService.getConversationHistory(token, page, 10)
         setConversations(data.conversations)
         setTotalPages(data.pagination.pages)
+
+        // Update user data if available (eliminates need for separate /auth/me call)
+        if (data.user) {
+          login(data.user, token)
+        }
 
         // Sync with chat store threads
         syncThreadsWithAPI(data.conversations)
@@ -156,6 +161,11 @@ const ConversationHistory = () => {
       const data = await AuthService.getConversationHistory(token, page, 10)
       setConversations(data.conversations)
       setTotalPages(data.pagination.pages)
+
+      // Update user data if available
+      if (data.user) {
+        login(data.user, token)
+      }
 
       // Sync with chat store threads
       syncThreadsWithAPI(data.conversations)

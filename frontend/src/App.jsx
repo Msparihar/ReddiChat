@@ -16,28 +16,16 @@ function App() {
     document.documentElement.className = theme
   }, [theme])
 
-  // Check if user is authenticated and fetch user data
+  // Initialize app without making redundant auth calls
+  // User data will be fetched when ConversationHistory loads
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL)
-        console.log('Initializing auth...')
-        // Try to fetch user data (with stored token if available)
-        const userData = await AuthService.getCurrentUser(token)
-        console.log('User data fetched:', userData)
-        login(userData, token)
-      } catch (error) {
-        console.error('Failed to fetch user data:', error)
-        // If there's an error fetching user data, logout
-        logout()
-      } finally {
-        console.log('Auth initialization complete, setting loading to false')
-        setIsLoading(false)
-      }
+    console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL)
+    console.log('App initialization - skipping redundant auth call')
+    // Set loading to false immediately if we already have auth state
+    if (isAuthenticated || !token) {
+      setIsLoading(false)
     }
-
-    initializeAuth()
-  }, [token, login, logout])
+  }, [isAuthenticated, token])
 
   // Handle OAuth callback (both URL token and /auth/success)
   useEffect(() => {
@@ -57,29 +45,33 @@ function App() {
       // Remove token from URL for security
       window.history.replaceState({}, document.title, "/")
 
-      // Fetch user data and login user
+      // Fetch user data and login user (OAuth callback only)
       AuthService.getCurrentUser(accessToken)
         .then(userData => {
           console.log('Successfully fetched user data:', userData)
           login(userData, accessToken)
+          setIsLoading(false)
         })
         .catch(error => {
           console.error('Failed to fetch user data with URL token:', error)
           logout()
+          setIsLoading(false)
         })
     } else if (currentPath === '/auth/success') {
       console.log('Auth success path detected, trying cookie-based auth')
       // Remove the success path from URL
       window.history.replaceState({}, document.title, "/")
 
-      // Try to fetch user data with session cookie
+      // Try to fetch user data with session cookie (OAuth callback only)
       AuthService.getCurrentUser()
         .then(userData => {
           login(userData)
+          setIsLoading(false)
         })
         .catch(error => {
           console.error('Failed to fetch user data with cookie:', error)
           logout()
+          setIsLoading(false)
         })
     } else {
       console.log('No OAuth callback detected - normal page load')

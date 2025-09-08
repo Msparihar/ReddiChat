@@ -5,11 +5,7 @@ from app.core.database import get_db
 from app.services.auth_service import AuthService
 from app.models.user import User
 import uuid
-import logging
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.core.logger import logger
 
 
 class AuthMiddleware:

@@ -4,12 +4,16 @@ from app.core.config import settings
 from app.routers import chat_router, auth_router, chat_history_router
 from app.core.database import engine, Base
 import os
+from app.core.logger import logger
 
 
 # Create all database tables
+logger.info("Creating database tables...")
 Base.metadata.create_all(bind=engine)
+logger.info("Database tables created successfully")
 
 # Initialize FastAPI app
+logger.info(f"Initializing FastAPI app: {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
 app = FastAPI(
     title=settings.PROJECT_NAME, version=settings.PROJECT_VERSION, openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
@@ -31,22 +35,24 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
-# Add authentication middleware (temporarily disabled while using dependencies)
-# app.add_middleware(AuthMiddleware)
 
 # Include routers
+logger.info("Setting up API routes...")
 app.include_router(chat_router, prefix=settings.API_V1_STR)
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(chat_history_router, prefix=settings.API_V1_STR)
+logger.info("API routes configured successfully")
 
 
 @app.get("/")
-async def root():
+def root():
+    logger.info("Root endpoint accessed")
     return {"message": "Welcome to ReddiChats API"}
 
 
 @app.get("/health")
-async def health_check():
+def health_check():
+    logger.debug("Health check endpoint accessed")
     return {"status": "healthy"}
 
 

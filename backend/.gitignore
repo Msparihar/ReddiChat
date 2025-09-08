@@ -12,3 +12,8 @@ wheels/
 # Environment files
 .env
 .env.prod
+logs/
+*.log
+alembic/
+alembic.ini
+*.backup.*all logger

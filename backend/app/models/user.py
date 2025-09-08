@@ -19,7 +19,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     avatar_url = Column(String, nullable=True)
-    provider = Column(Enum(OAuthProvider), nullable=False)
+    provider = Column(Enum(OAuthProvider, values_callable=lambda obj: [e.value for e in obj]), nullable=False)
     provider_id = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
