@@ -5,6 +5,7 @@ export const useUIStore = create((set) => ({
   theme: "dark",
   isSettingsOpen: false,
   isUpgradePopupOpen: false,
+  isAttachmentPopupOpen: false,
 
   toggleSidebar: () =>
     set((state) => ({
@@ -24,6 +25,11 @@ export const useUIStore = create((set) => ({
   toggleUpgradePopup: () =>
     set((state) => ({
       isUpgradePopupOpen: !state.isUpgradePopupOpen,
+    })),
+
+  toggleAttachmentPopup: () =>
+    set((state) => ({
+      isAttachmentPopupOpen: !state.isAttachmentPopupOpen,
     })),
 
   setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),

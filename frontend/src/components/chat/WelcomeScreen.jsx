@@ -2,11 +2,14 @@ import { Sparkles, BookOpen, Code, Lightbulb } from 'lucide-react'
 import { useChatStore } from '../../stores/chat-store'
 import { useAuthStore } from '../../stores/auth-store'
 import { useUIStore } from '../../stores/ui-store'
+import { useTheme } from '../../contexts/ThemeContext'
+import { cn } from '../../lib/utils'
 
 const WelcomeScreen = () => {
   const { sendMessage } = useChatStore()
   const { user } = useAuthStore()
   const { toggleUpgradePopup } = useUIStore()
+  const { colors } = useTheme()
 
   const suggestedPrompts = [
     "How does AI work?",
@@ -27,9 +30,9 @@ const WelcomeScreen = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center p-6 max-w-3xl mx-auto overflow-y-auto bg-gray-850">
+    <div className={cn("flex-1 flex flex-col items-center p-6 max-w-3xl mx-auto overflow-y-auto", colors.primary)}>
       <div className="text-center mb-8 mt-12">
-        <h1 className="text-2xl font-normal mb-6">
+        <h1 className={cn("text-2xl font-normal mb-6", colors.textPrimary)}>
           How can I help you{user?.name ? `, ${user.name.split(' ')[0]}` : ''}?
         </h1>
       </div>
@@ -43,10 +46,10 @@ const WelcomeScreen = () => {
             return (
               <button
                 key={category.label}
-                className="flex items-center gap-2 px-3 py-2 bg-gray-800/60 hover:bg-gray-800/80 rounded-md transition-colors border border-gray-700/50"
+                className={cn("flex items-center gap-2 px-3 py-2 rounded-md transition-colors border", colors.tertiary, colors.hover, colors.borderSecondary)}
               >
                 <Icon className={`w-4 h-4 ${category.color}`} />
-                <span className="text-sm font-normal">{category.label}</span>
+                <span className={cn("text-sm font-normal", colors.textPrimary)}>{category.label}</span>
               </button>
             )
           })}
@@ -58,9 +61,9 @@ const WelcomeScreen = () => {
             <button
               key={index}
               onClick={() => handlePromptClick(prompt)}
-              className="text-left p-3 bg-gray-800/60 hover:bg-gray-800/80 rounded-md transition-colors border border-gray-700/50 hover:border-gray-600/60"
+              className={cn("text-left p-3 rounded-md transition-colors border", colors.tertiary, colors.hover, colors.borderSecondary, colors.borderHover)}
             >
-              <span className="text-sm text-gray-200">{prompt}</span>
+              <span className={cn("text-sm", colors.textSecondary)}>{prompt}</span>
             </button>
           ))}
         </div>

@@ -1,26 +1,30 @@
 import Sidebar from './Sidebar'
 import SettingsPage from '../settings/SettingsPage'
 import UpgradePopup from '../common/UpgradePopup'
+import AttachmentPopup from '../common/AttachmentPopup'
 import { useUIStore } from '../../stores/ui-store'
+import { useTheme } from '../../contexts/ThemeContext'
 import { cn } from '../../lib/utils'
 
 const AppLayout = ({ children }) => {
-  const { isSidebarOpen, isSettingsOpen, isUpgradePopupOpen, toggleUpgradePopup } = useUIStore()
+  const { isSidebarOpen, isSettingsOpen, isUpgradePopupOpen, isAttachmentPopupOpen, toggleUpgradePopup, toggleAttachmentPopup } = useUIStore()
+  const { colors } = useTheme()
 
   return (
-    <div className="h-screen bg-gray-850 text-gray-100">
+    <div className={cn("h-screen", colors.primary, colors.textPrimary)}>
       {/* Fixed Sidebar */}
       <Sidebar />
 
       {/* Mobile overlay backdrop */}
       {isSidebarOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" />
+        <div className={cn("fixed inset-0 z-30 md:hidden", colors.overlay)} />
       )}
 
       {/* Main content area */}
       <main
         className={cn(
-          "fixed top-0 bottom-0 right-0 transition-all duration-300 bg-gray-850",
+          "fixed top-0 bottom-0 right-0 transition-all duration-300",
+          colors.primary,
           isSidebarOpen
             ? "left-60"
             : "left-16"
@@ -36,6 +40,9 @@ const AppLayout = ({ children }) => {
 
       {/* Upgrade Popup */}
       <UpgradePopup isOpen={isUpgradePopupOpen} onClose={toggleUpgradePopup} />
+
+      {/* Attachment Popup */}
+      <AttachmentPopup isOpen={isAttachmentPopupOpen} onClose={toggleAttachmentPopup} />
     </div>
   )
 }

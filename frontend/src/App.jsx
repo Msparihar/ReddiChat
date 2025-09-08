@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './components/layout/AppLayout'
 import ChatArea from './components/chat/ChatArea'
 import Login from './components/auth/Login'
+import ThemeProvider from './contexts/ThemeContext'
 import { useUIStore } from './stores/ui-store'
 import { useAuthStore } from './stores/auth-store'
 import AuthService from './services/auth-service'
@@ -94,13 +95,19 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <Login />
+    return (
+      <ThemeProvider>
+        <Login />
+      </ThemeProvider>
+    )
   }
 
   return (
-    <AppLayout>
-      <ChatArea />
-    </AppLayout>
+    <ThemeProvider>
+      <AppLayout>
+        <ChatArea />
+      </AppLayout>
+    </ThemeProvider>
   )
 }
 

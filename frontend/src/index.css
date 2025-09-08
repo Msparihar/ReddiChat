@@ -9,8 +9,16 @@
   }
 
   body {
-    @apply bg-gray-950 text-gray-100 font-sans h-full;
+    @apply font-sans h-full transition-colors duration-300;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  body.dark {
+    @apply bg-gray-950 text-gray-100;
+  }
+
+  body.light {
+    @apply bg-gray-50 text-gray-900;
   }
 
   #root {
@@ -21,7 +29,8 @@
 @layer components {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+    scrollbar-color: var(--scrollbar-color, rgba(155, 155, 155, 0.5))
+      transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -33,7 +42,7 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: rgba(155, 155, 155, 0.5);
+    background-color: var(--scrollbar-color, rgba(155, 155, 155, 0.5));
     border-radius: 20px;
   }
 

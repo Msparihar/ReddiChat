@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
-import { Plus, LogOut, Menu, Settings } from 'lucide-react'
+import { Plus, LogOut, Menu, Settings, Sun, Moon } from 'lucide-react'
 import { useUIStore } from '../../stores/ui-store'
 import { useChatStore } from '../../stores/chat-store'
 import { useAuthStore } from '../../stores/auth-store'
+import { useTheme } from '../../contexts/ThemeContext'
 import ConversationHistory from '../chat/ConversationHistory'
 import { cn } from '../../lib/utils'
 
@@ -10,6 +11,7 @@ const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, setSidebarOpen, toggleSettings } = useUIStore()
   const { createNewThread } = useChatStore()
   const { user, logout } = useAuthStore()
+  const { colors, toggleTheme, isDark } = useTheme()
 
   // Function to get user initials
   const getUserInitials = (name) => {
@@ -70,7 +72,7 @@ const Sidebar = () => {
     <aside
       data-sidebar
       className={cn(
-        "bg-gray-900 border-r border-gray-750 transition-all duration-300 flex flex-col z-40",
+        colors.secondary, colors.borderPrimary, "border-r transition-all duration-300 flex flex-col z-40",
         // Desktop: normal sidebar behavior - full height
         "md:fixed md:top-0 md:bottom-0 md:left-0",
         // Mobile: overlay sidebar
@@ -83,7 +85,7 @@ const Sidebar = () => {
     >
       {/* Sidebar Header */}
       <div className={cn(
-        "border-b border-gray-750",
+        "border-b", colors.borderPrimary,
         isSidebarOpen ? "p-3" : "p-2"
       )}>
         {isSidebarOpen ? (
@@ -94,20 +96,29 @@ const Sidebar = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={toggleSidebar}
-                  className="p-1.5 hover:bg-gray-800 rounded-md transition-colors"
+                  className={cn("p-1.5 rounded-md transition-colors", colors.hoverSecondary)}
                   title="Collapse sidebar"
                 >
-                  <Menu className="w-4 h-4 text-gray-400" />
+                  <Menu className={cn("w-4 h-4", colors.textMuted)} />
                 </button>
-                <h1 className="text-lg font-semibold text-gray-100">ReddiChat</h1>
+                <h1 className={cn("text-lg font-semibold", colors.textPrimary)}>ReddiChat</h1>
               </div>
-              <button
-                onClick={toggleSettings}
-                className="p-1.5 hover:bg-gray-800 rounded-md transition-colors"
-                title="Settings"
-              >
-                <Settings className="w-4 h-4 text-gray-400" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={toggleTheme}
+                  className={cn("p-1.5 rounded-md transition-colors", colors.hoverSecondary)}
+                  title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {isDark ? <Sun className={cn("w-4 h-4", colors.textMuted)} /> : <Moon className={cn("w-4 h-4", colors.textMuted)} />}
+                </button>
+                <button
+                  onClick={toggleSettings}
+                  className={cn("p-1.5 rounded-md transition-colors", colors.hoverSecondary)}
+                  title="Settings"
+                >
+                  <Settings className={cn("w-4 h-4", colors.textMuted)} />
+                </button>
+              </div>
             </div>
 
             {/* New Chat Button */}
@@ -123,22 +134,30 @@ const Sidebar = () => {
         ) : (
           /* Collapsed sidebar layout */
           <div className="space-y-2">
-            {/* Top section - Hamburger and Settings */}
+            {/* Top section - Hamburger, Theme, and Settings */}
             <div className="flex flex-col space-y-1">
               <button
                 onClick={toggleSidebar}
-                className="w-full p-2 hover:bg-gray-800 rounded-md transition-colors flex items-center justify-center"
+                className={cn("w-full p-2 rounded-md transition-colors flex items-center justify-center", colors.hoverSecondary)}
                 aria-label="Expand sidebar"
               >
-                <Menu className="w-5 h-5 text-gray-100" />
+                <Menu className={cn("w-5 h-5", colors.textPrimary)} />
+              </button>
+
+              <button
+                onClick={toggleTheme}
+                className={cn("w-full p-2 rounded-md transition-colors flex items-center justify-center", colors.hoverSecondary)}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDark ? <Sun className={cn("w-4 h-4", colors.textMuted)} /> : <Moon className={cn("w-4 h-4", colors.textMuted)} />}
               </button>
 
               <button
                 onClick={toggleSettings}
-                className="w-full p-2 hover:bg-gray-800 rounded-md transition-colors flex items-center justify-center"
+                className={cn("w-full p-2 rounded-md transition-colors flex items-center justify-center", colors.hoverSecondary)}
                 aria-label="Settings"
               >
-                <Settings className="w-4 h-4 text-gray-400" />
+                <Settings className={cn("w-4 h-4", colors.textMuted)} />
               </button>
             </div>
 
@@ -161,25 +180,26 @@ const Sidebar = () => {
 
       {/* User Profile */}
       <div className={cn(
-        "border-t border-gray-750",
+        "border-t", colors.borderPrimary,
         isSidebarOpen ? "p-3" : "p-2"
       )}>
         <div className="flex flex-col gap-2">
           <button
             onClick={toggleSettings}
             className={cn(
-              "flex items-center w-full hover:bg-gray-800 rounded-md p-1 transition-colors",
+              "flex items-center w-full rounded-md p-1 transition-colors",
+              colors.hoverSecondary,
               isSidebarOpen ? "gap-2.5" : "justify-center"
             )}
             aria-label="Open user settings"
           >
             <div className="w-7 h-7 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-medium">{getUserInitials(user?.name)}</span>
+              <span className="text-xs font-medium text-white">{getUserInitials(user?.name)}</span>
             </div>
             {isSidebarOpen && (
               <div className="flex-1 min-w-0">
-              <div className="text-sm font-normal truncate">{user?.name || 'Guest User'}</div>
-              <div className="text-xs text-gray-500">Free</div>
+                <div className={cn("text-sm font-normal truncate", colors.textPrimary)}>{user?.name || 'Guest User'}</div>
+                <div className={cn("text-xs", colors.textMuted)}>Free</div>
               </div>
             )}
           </button>
@@ -187,7 +207,7 @@ const Sidebar = () => {
           {isSidebarOpen && (
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 w-full hover:bg-gray-800 rounded-md p-1 transition-colors text-sm text-gray-300"
+              className={cn("flex items-center gap-2 w-full rounded-md p-1 transition-colors text-sm", colors.hoverSecondary, colors.textSecondary)}
               aria-label="Logout"
             >
               <LogOut className="w-4 h-4" />
