@@ -30,6 +30,9 @@ class AuthService:
     def update_user(self, user: User, user_data: UserCreate) -> User:
         """Update an existing user"""
         for key, value in user_data.model_dump().items():
+            # Only update avatar_url if a value is provided
+            if key == "avatar_url" and value is None:
+                continue
             setattr(user, key, value)
         self.db.commit()
         self.db.refresh(user)

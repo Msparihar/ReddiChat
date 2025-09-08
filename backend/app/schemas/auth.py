@@ -7,11 +7,15 @@ import uuid
 class UserBase(BaseModel):
     email: str
     name: str
+    avatar_url: Optional[str] = None
 
 
 class UserCreate(UserBase):
     provider: OAuthProvider
     provider_id: str
+
+    class Config:
+        from_attributes = True
 
 
 class User(UserBase):

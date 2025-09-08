@@ -198,15 +198,27 @@ async def oauth_callback(
         # Fetch user information using the access token
         user_info = await get_user_info(provider.value, access_token)
 
+        # Log all user information received from OAuth provider (especially for Google)
+        logger.info(f"=== User info received from {provider.value} ===")
+        logger.info(f"Full user info: {user_info}")
+
         # Extract relevant user information based on the provider
         if provider.value == "google":
             provider_id = user_info.get("id")
             email = user_info.get("email")
             name = user_info.get("name")
+            picture = user_info.get("picture")
+            # Log additional Google user info
+            if picture:
+                logger.info(f"Google user picture URL: {picture}")
+            logger.info(f"Google user verified_email: {user_info.get('verified_email')}")
+            logger.info(f"Google user given_name: {user_info.get('given_name')}")
+            logger.info(f"Google user family_name: {user_info.get('family_name')}")
         elif provider.value == "github":
             provider_id = user_info.get("id")
             email = user_info.get("email")
             name = user_info.get("name")
+            picture = None
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported OAuth provider")
 
@@ -223,6 +235,7 @@ async def oauth_callback(
             user_data = UserCreate(
                 email=email,
                 name=name,
+                avatar_url=picture,
                 provider=provider,
                 provider_id=str(provider_id),
             )
@@ -232,6 +245,7 @@ async def oauth_callback(
             user_data = UserCreate(
                 email=email,
                 name=name,
+                avatar_url=picture,
                 provider=provider,
                 provider_id=str(provider_id),
             )

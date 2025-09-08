@@ -18,6 +18,7 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
+    avatar_url = Column(String, nullable=True)
     provider = Column(Enum(OAuthProvider), nullable=False)
     provider_id = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -28,4 +29,4 @@ class User(Base):
     messages = relationship("Message", back_populates="user")
 
     def __repr__(self):
-        return f"<User(id={self.id}, email='{self.email}', name='{self.name}')>"
+        return f"<User(id={self.id}, email='{self.email}', name='{self.name}', avatar_url='{self.avatar_url}')>"
