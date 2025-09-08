@@ -153,7 +153,22 @@ Every Reddit-sourced response includes:
    cd ReddiChat
    ```
 
-2. **Backend Setup**
+2. **Set up Environment Variables**
+
+   ```bash
+   cd backend
+   cp env.example .env
+   ```
+
+   **Required**: Edit `.env` and add your Google Gemini API key:
+
+   ```env
+   GEMINI_API_KEY=your_actual_api_key_here
+   ```
+
+   > 🔑 **Get your free Gemini API key**: [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+3. **Backend Setup**
 
    ```bash
    cd backend
@@ -162,7 +177,7 @@ Every Reddit-sourced response includes:
    uv run uvicorn app.main:app --reload
    ```
 
-3. **Frontend Setup**
+4. **Frontend Setup**
 
    ```bash
    cd frontend
@@ -170,10 +185,9 @@ Every Reddit-sourced response includes:
    npm run dev
    ```
 
-4. **Environment Configuration**
-   - Set up Google OAuth credentials
-   - Configure Reddit API access
-   - Set environment variables for API endpoints
+5. **Optional Configuration**
+   - Set up Google OAuth credentials for authentication
+   - Configure Reddit API access for enhanced search capabilities
 
 ### Docker Deployment
 
