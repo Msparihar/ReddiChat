@@ -1,9 +1,10 @@
 import { create } from "zustand";
 
 export const useUIStore = create((set) => ({
-  isSidebarOpen: true,
+  isSidebarOpen: false,
   theme: "dark",
   isSettingsOpen: false,
+  isUpgradePopupOpen: false,
 
   toggleSidebar: () =>
     set((state) => ({
@@ -18,6 +19,11 @@ export const useUIStore = create((set) => ({
   toggleSettings: () =>
     set((state) => ({
       isSettingsOpen: !state.isSettingsOpen,
+    })),
+
+  toggleUpgradePopup: () =>
+    set((state) => ({
+      isUpgradePopupOpen: !state.isUpgradePopupOpen,
     })),
 
   setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),

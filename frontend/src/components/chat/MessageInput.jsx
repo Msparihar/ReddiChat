@@ -1,13 +1,11 @@
 import { useState } from 'react'
-import { Send, Search, Paperclip, Settings, Sun, Moon, Mic, Volume2 } from 'lucide-react'
+import { Send, Paperclip } from 'lucide-react'
 import { useChatStore } from '../../stores/chat-store'
-import { useUIStore } from '../../stores/ui-store'
 import { cn } from '../../lib/utils'
 
 const MessageInput = () => {
   const [message, setMessage] = useState('')
   const { sendMessage, isLoading } = useChatStore()
-  const { toggleSettings, theme, toggleTheme } = useUIStore()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -26,105 +24,61 @@ const MessageInput = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-4">
-      {/* Message Input */}
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex items-end gap-3">
-          <div className="flex-1 relative">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type your message here..."
-              className="w-full bg-gray-850 border border-gray-700 rounded-lg px-4 py-3 pr-12 text-sm resize-none focus:outline-none focus:border-gray-600 focus:bg-gray-800 min-h-[48px] max-h-32"
-              rows={1}
-              style={{
-                height: 'auto',
-                minHeight: '48px'
-              }}
-              onInput={(e) => {
-                e.target.style.height = 'auto'
-                e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px'
-              }}
-            />
+        {/* Input Container with integrated buttons */}
+        <div className="relative bg-gray-800/60 border border-gray-700/50 rounded-xl focus-within:border-gray-600 focus-within:bg-gray-800/80 transition-colors">
+          {/* Left side buttons */}
+          <div className="absolute left-3 bottom-3 flex items-center gap-1">
+            <button
+              type="button"
+              className="p-1.5 text-gray-400 hover:text-gray-300 hover:bg-gray-700/60 rounded-md transition-colors"
+              title="Attach files"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+          </div>
 
-            {/* Send Button */}
+          {/* Textarea */}
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask anything..."
+            className="w-full bg-transparent pl-12 pr-12 py-3 text-sm resize-none focus:outline-none min-h-[48px] max-h-32 placeholder:text-gray-400 text-gray-100"
+            rows={1}
+            style={{
+              height: 'auto',
+              minHeight: '48px'
+            }}
+            onInput={(e) => {
+              e.target.style.height = 'auto'
+              e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px'
+            }}
+          />
+
+          {/* Right side - Send button */}
+          <div className="absolute right-3 bottom-3">
             <button
               type="submit"
               disabled={!message.trim() || isLoading}
               className={cn(
-                "absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 message.trim() && !isLoading
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-gray-700 text-gray-500 cursor-not-allowed"
+                  : "bg-gray-700/50 text-gray-500 cursor-not-allowed"
               )}
+              title="Send message"
             >
               <Send className="w-4 h-4" />
             </button>
           </div>
         </div>
-      </form>
 
-      {/* Bottom Controls */}
-      <div className="flex items-center justify-between mt-3">
-        {/* Helper Text - Left aligned */}
-        <div className="text-xs text-gray-500">
+        {/* Helper text */}
+        <div className="text-xs text-gray-500 mt-2 text-center">
           Press Enter to send, Shift + Enter for new line
         </div>
-
-        {/* Action Buttons - Right aligned */}
-        <div className="flex items-center gap-1">
-          {/* Main Action Buttons */}
-          <button
-            className="p-2 text-gray-500 hover:text-gray-400 hover:bg-gray-800 rounded-md transition-colors"
-            title="Search"
-          >
-            <Search className="w-4 h-4" />
-          </button>
-
-          <button
-            className="p-2 text-gray-500 hover:text-gray-400 hover:bg-gray-800 rounded-md transition-colors"
-            title="Attach files"
-          >
-            <Paperclip className="w-4 h-4" />
-          </button>
-
-          {/* Voice Controls */}
-          <div className="flex items-center gap-1 mx-1">
-            <button
-              className="p-2 text-gray-500 hover:text-gray-400 hover:bg-gray-800 rounded-md transition-colors"
-              title="Voice input"
-            >
-              <Mic className="w-4 h-4" />
-            </button>
-
-            <button
-              className="p-2 text-gray-500 hover:text-gray-400 hover:bg-gray-800 rounded-md transition-colors"
-              title="Audio output"
-            >
-              <Volume2 className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Settings Controls */}
-          <div className="flex items-center gap-1 ml-1 border-l border-gray-700 pl-2">
-            <button
-              onClick={toggleSettings}
-              className="p-2 text-gray-500 hover:text-gray-400 hover:bg-gray-800 rounded-md transition-colors"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-gray-500 hover:text-gray-400 hover:bg-gray-800 rounded-md transition-colors"
-              title="Toggle Theme"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-      </div>
+      </form>
     </div>
   )
 }

@@ -32,7 +32,7 @@ const Login = () => {
   }, [isAuthenticated])
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-850 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-gray-900 rounded-lg shadow-xl p-8 border border-gray-750">
           <div className="text-center mb-8">

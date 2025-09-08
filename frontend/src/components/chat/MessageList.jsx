@@ -35,7 +35,7 @@ const MessageList = () => {
           <div key={message.id}>
             {message.role === 'user' ? (
               // User message - keep bubble style
-              <div className="px-4 py-6 bg-gray-900/50">
+              <div className="px-4 py-6 bg-gray-900/30">
                 <div className="max-w-3xl mx-auto flex gap-4 justify-end">
                   <div className="max-w-2xl">
                     <div className="bg-blue-600 text-white px-4 py-3 rounded-2xl">
@@ -57,7 +57,7 @@ const MessageList = () => {
               </div>
             ) : (
               // AI message - ChatGPT style (no bubble)
-              <div className="px-4 py-6 bg-gray-850/30 border-b border-gray-800/50">
+              <div className="px-4 py-6 bg-gray-900/20 border-b border-gray-800/50">
                 <div className="max-w-3xl mx-auto flex gap-4">
                   <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                     <span className="text-xs font-medium text-white">AI</span>
@@ -99,7 +99,7 @@ const MessageList = () => {
 
         {/* Loading Message */}
         {isLoading && (
-          <div className="px-4 py-6 bg-gray-850/30 border-b border-gray-800/50">
+          <div className="px-4 py-6 bg-gray-900/20 border-b border-gray-800/50">
             <div className="max-w-3xl mx-auto flex gap-4">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                 <span className="text-xs font-medium text-white">AI</span>

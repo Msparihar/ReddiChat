@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Menu, Plus, LogOut } from 'lucide-react'
+import { Plus, LogOut, Menu, Settings } from 'lucide-react'
 import { useUIStore } from '../../stores/ui-store'
 import { useChatStore } from '../../stores/chat-store'
 import { useAuthStore } from '../../stores/auth-store'
@@ -7,8 +7,8 @@ import ConversationHistory from '../chat/ConversationHistory'
 import { cn } from '../../lib/utils'
 
 const Sidebar = () => {
-  const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUIStore()
-  const { createNewThread, toggleSettings } = useChatStore()
+  const { isSidebarOpen, toggleSidebar, setSidebarOpen, toggleSettings } = useUIStore()
+  const { createNewThread } = useChatStore()
   const { user, logout } = useAuthStore()
 
   // Function to get user initials
@@ -70,44 +70,88 @@ const Sidebar = () => {
     <aside
       data-sidebar
       className={cn(
-        "bg-gray-900 border-r border-gray-750 transition-all duration-300 flex flex-col z-30",
-        // Desktop: normal sidebar behavior
-        "md:relative",
+        "bg-gray-900 border-r border-gray-750 transition-all duration-300 flex flex-col z-40",
+        // Desktop: normal sidebar behavior - full height
+        "md:fixed md:top-0 md:bottom-0 md:left-0",
         // Mobile: overlay sidebar
-        "fixed inset-y-0 left-0 md:static",
+        "fixed top-0 bottom-0 left-0",
         isSidebarOpen
           ? "w-60 translate-x-0"
-          : "w-12 md:w-12 -translate-x-full md:translate-x-0"
+          : "w-16 translate-x-0"
       )}
       aria-label="Sidebar navigation"
     >
-      {/* Menu Button */}
-      <button
-        onClick={toggleSidebar}
-        className="p-3 hover:bg-gray-800 transition-colors"
-        aria-label="Toggle sidebar"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      {/* Sidebar Header */}
+      <div className={cn(
+        "border-b border-gray-750",
+        isSidebarOpen ? "p-3" : "p-2"
+      )}>
+        {isSidebarOpen ? (
+          /* Expanded sidebar layout */
+          <div className="space-y-3">
+            {/* Header with ReddiChat branding and Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleSidebar}
+                  className="p-1.5 hover:bg-gray-800 rounded-md transition-colors"
+                  title="Collapse sidebar"
+                >
+                  <Menu className="w-4 h-4 text-gray-400" />
+                </button>
+                <h1 className="text-lg font-semibold text-gray-100">ReddiChat</h1>
+              </div>
+              <button
+                onClick={toggleSettings}
+                className="p-1.5 hover:bg-gray-800 rounded-md transition-colors"
+                title="Settings"
+              >
+                <Settings className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
 
-      {/* Header */}
-      <div className="px-2 pb-2 border-b border-gray-750">
-        {isSidebarOpen && (
-          <h1 className="text-base font-medium px-1 mb-2">Chat</h1>
+            {/* New Chat Button */}
+            <button
+              onClick={handleNewChat}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center justify-center gap-2 px-3 py-2 transition-colors text-sm font-medium"
+              aria-label="Create new chat"
+            >
+              <Plus className="w-4 h-4" />
+              New Chat
+            </button>
+          </div>
+        ) : (
+          /* Collapsed sidebar layout */
+          <div className="space-y-2">
+            {/* Top section - Hamburger and Settings */}
+            <div className="flex flex-col space-y-1">
+              <button
+                onClick={toggleSidebar}
+                className="w-full p-2 hover:bg-gray-800 rounded-md transition-colors flex items-center justify-center"
+                aria-label="Expand sidebar"
+              >
+                <Menu className="w-5 h-5 text-gray-100" />
+              </button>
+
+              <button
+                onClick={toggleSettings}
+                className="w-full p-2 hover:bg-gray-800 rounded-md transition-colors flex items-center justify-center"
+                aria-label="Settings"
+              >
+                <Settings className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+
+            {/* New Chat Icon */}
+            <button
+              onClick={handleNewChat}
+              className="w-full p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors flex items-center justify-center"
+              aria-label="Create new chat"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
         )}
-
-        {/* New Chat Button */}
-        <button
-          onClick={handleNewChat}
-          className={cn(
-            "w-full bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center transition-colors text-sm font-medium",
-            isSidebarOpen ? "px-3 py-2 justify-center gap-2" : "p-2 justify-center"
-          )}
-          aria-label="Create new chat"
-        >
-          <Plus className="w-4 h-4" />
-          {isSidebarOpen && "New Chat"}
-        </button>
       </div>
 
       {/* Threads List */}
@@ -116,15 +160,18 @@ const Sidebar = () => {
       </div>
 
       {/* User Profile */}
-      <div className="p-3 border-t border-gray-750">
+      <div className={cn(
+        "border-t border-gray-750",
+        isSidebarOpen ? "p-3" : "p-2"
+      )}>
         <div className="flex flex-col gap-2">
           <button
             onClick={toggleSettings}
             className={cn(
               "flex items-center w-full hover:bg-gray-800 rounded-md p-1 transition-colors",
-              isSidebarOpen && "gap-2.5"
+              isSidebarOpen ? "gap-2.5" : "justify-center"
             )}
-            aria-label="Open settings"
+            aria-label="Open user settings"
           >
             <div className="w-7 h-7 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-xs font-medium">{getUserInitials(user?.name)}</span>
