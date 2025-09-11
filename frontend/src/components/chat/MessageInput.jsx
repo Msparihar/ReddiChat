@@ -50,7 +50,7 @@ const MessageInput = () => {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
-              className={cn("w-full bg-transparent py-3 pr-16 text-sm resize-none focus:outline-none min-h-[48px] max-h-32 placeholder:text-gray-400 scrollbar-thin", colors.textPrimary)}
+              className={cn("w-full bg-transparent py-3 pr-16 text-sm resize-none focus:outline-none min-h-[48px] max-h-32 placeholder:text-gray-400 scrollbar-thin pt-4", colors.textPrimary)}
               rows={1}
               style={{
                 height: 'auto',

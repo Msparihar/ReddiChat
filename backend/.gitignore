@@ -12,3 +12,5 @@ wheels/
 # Environment files
 .env
 .env.prod
+
+logs/
