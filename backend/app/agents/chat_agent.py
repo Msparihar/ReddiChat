@@ -5,7 +5,10 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from app.core.config import settings
 from app.tools.reddit_tool import search_reddit
 from app.agents.system_prompt import SYSTEM_PROMPT
+from app.core.logger import get_logger
 import json
+
+logger = get_logger(__name__)
 
 # Initialize the Gemini LLM
 if not settings.GEMINI_API_KEY or settings.GEMINI_API_KEY == "your_gemini_api_key_here":
@@ -44,9 +47,9 @@ def call_model(state: MessagesState):
     if not messages or not isinstance(messages[0], SystemMessage):
         system_msg = SystemMessage(content=SYSTEM_PROMPT)
         messages = [system_msg] + messages
-        print(f"Added system message. Total messages: {len(messages)}")
-        print(f"System message preview: {SYSTEM_PROMPT[:100]}...")
+        logger.debug(f"📋 Added system message. Total messages: {len(messages)}")
 
+    logger.debug("🤖 Invoking Gemini model...")
     response = agent_with_tools.invoke(messages)
     return {"messages": response}
 
@@ -69,28 +72,38 @@ app = graph.compile()
 
 def get_chat_response(messages: list) -> dict:
     """
-    Get a response from the chat agent
+    Get a response from the chat agent with multimodal support
 
     Args:
-        messages: List of messages in the conversation
+        messages: List of messages in the conversation (can include multimodal content)
 
     Returns:
         dict: The agent's response with content and any sources
     """
+    logger.info(f"🎯 Processing chat with {len(messages)} messages")
+
     try:
         # Convert messages to the format expected by LangGraph
         langgraph_messages = []
-        for msg in messages:
+        for i, msg in enumerate(messages):
             if msg["role"] == "user":
-                langgraph_messages.append(HumanMessage(content=msg["content"]))
+                # Handle multimodal content
+                if isinstance(msg["content"], list):
+                    logger.debug(f"📸 Message {i}: multimodal content")
+                    langgraph_messages.append(HumanMessage(content=msg["content"]))
+                else:
+                    logger.debug(f"💬 Message {i}: text-only")
+                    langgraph_messages.append(HumanMessage(content=msg["content"]))
             elif msg["role"] == "assistant":
                 langgraph_messages.append(AIMessage(content=msg["content"]))
 
         # Invoke the agent
+        logger.debug("🔄 Invoking agent graph...")
         result = app.invoke({"messages": langgraph_messages})
 
         # Extract messages from the result
         result_messages = result["messages"]
+        logger.debug(f"📥 Received {len(result_messages)} result messages")
 
         # Find the final AI response and any tool messages
         final_response = None
@@ -100,26 +113,28 @@ def get_chat_response(messages: list) -> dict:
         for message in result_messages:
             if isinstance(message, AIMessage) and message.content:
                 final_response = message.content
+                logger.debug("✅ Found AI response")
             elif isinstance(message, ToolMessage):
                 try:
                     tool_data = json.loads(message.content)
                     if message.name == "search_reddit":
                         tool_used = "search_reddit"
                         tool_results.extend(tool_data.get("posts", []))
+                        logger.info(f"🔍 Reddit tool found {len(tool_data.get('posts', []))} posts")
                 except (json.JSONDecodeError, AttributeError):
-                    # Handle cases where tool content isn't valid JSON
-                    pass
+                    logger.warning("⚠️ Failed to parse tool message content")
 
         # If no final response found, get the last message
         if final_response is None:
             last_message = result_messages[-1]
             final_response = last_message.content if hasattr(last_message, "content") else str(last_message)
+            logger.warning("⚠️ Using fallback response from last message")
 
+        logger.info(f"✅ Chat response generated: tool={tool_used}, sources={len(tool_results)}")
         return {"content": final_response, "sources": tool_results, "tool_used": tool_used}
 
     except Exception as e:
-        # Log the error for developers but don't expose it to users
-        print(f"Chat agent error: {str(e)}")
+        logger.error(f"❌ Chat agent error: {str(e)}")
 
         # Return a generic error message
         error_response = """## 🔧 Service Temporarily Unavailable
@@ -129,3 +144,37 @@ I'm currently experiencing technical difficulties and unable to process your req
 If the issue persists, the service may be undergoing maintenance or configuration updates."""
 
         return {"content": error_response, "sources": [], "tool_used": None}
+
+
+def get_chat_response_multimodal(message: dict, chat_history: list = None) -> dict:
+    """
+    Enhanced chat response function with explicit multimodal support
+
+    Args:
+        message: Current message (can be multimodal)
+        chat_history: Previous messages with optional multimodal content
+
+    Returns:
+        dict: The agent's response with content and any sources
+    """
+    logger.info("🔀 Multimodal chat request")
+
+    try:
+        # Build complete message history
+        all_messages = []
+
+        # Add chat history if provided
+        if chat_history:
+            all_messages.extend(chat_history)
+            logger.debug(f"📚 Added {len(chat_history)} history messages")
+
+        # Add current message
+        all_messages.append(message)
+        logger.debug(f"💬 Added current message, total: {len(all_messages)}")
+
+        # Use existing function with enhanced message list
+        return get_chat_response(all_messages)
+
+    except Exception as e:
+        logger.error(f"❌ Multimodal chat agent error: {str(e)}")
+        return {"content": "Error processing multimodal content. Please try again.", "sources": [], "tool_used": None}

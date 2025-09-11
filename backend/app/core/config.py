@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Security Configuration
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
 
     # OAuth Configuration
     GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
@@ -43,6 +43,31 @@ class Settings(BaseSettings):
 
     REDDIT_CLIENT_ID: Optional[str] = os.getenv("REDDIT_CLIENT_ID")
     REDDIT_CLIENT_SECRET: Optional[str] = os.getenv("REDDIT_CLIENT_SECRET")
+
+    # AWS S3 Configuration
+    AWS_ACCESS_KEY_ID: Optional[str] = os.getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY: Optional[str] = os.getenv("AWS_SECRET_ACCESS_KEY")
+    AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
+    S3_BUCKET: str = os.getenv("S3_BUCKET", "reddichat-files")
+
+    # File Upload Configuration
+    MAX_FILE_SIZE: int = int(os.getenv("MAX_FILE_SIZE", "50000000"))  # 50MB default
+    MAX_FILES_PER_MESSAGE: int = int(os.getenv("MAX_FILES_PER_MESSAGE", "5"))
+    SUPPORTED_FILE_TYPES: set = {
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "audio/mpeg",
+        "audio/wav",
+        "audio/ogg",
+        "audio/m4a",
+        "video/mp4",
+        "video/webm",
+        "video/avi",
+        "video/mov",
+        "application/pdf",
+    }
 
     class Config:
         case_sensitive = True

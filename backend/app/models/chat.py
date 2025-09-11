@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum, JSON
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum, JSON, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -43,10 +43,12 @@ class Message(Base):
     # New fields for Reddit sources and tool usage
     sources = Column(JSON, nullable=True)  # Store Reddit sources as JSON
     tool_used = Column(String, nullable=True)  # Store which tool was used
+    has_attachments = Column(Boolean, default=False)  # Flag for messages with file attachments
 
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")
     user = relationship("User", back_populates="messages")
+    attachments = relationship("MessageAttachment", back_populates="message", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Message(id={self.id}, role='{self.role}', content='{self.content[:50]}...')>"

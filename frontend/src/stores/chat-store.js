@@ -88,6 +88,8 @@ export const useChatStore = create((set, get) => ({
           conversation_id: msg.conversation_id,
           sources: msg.sources || [],
           tool_used: msg.tool_used || null,
+          has_attachments: msg.has_attachments || false,
+          file_attachments: msg.file_attachments || [],
         })
       );
 
@@ -154,7 +156,7 @@ export const useChatStore = create((set, get) => ({
     });
   },
 
-  sendMessage: async (content) => {
+  sendMessage: async (content, files = []) => {
     let { currentThread } = get();
     const { token } = useAuthStore.getState();
 
@@ -178,6 +180,15 @@ export const useChatStore = create((set, get) => ({
       content,
       role: "user",
       timestamp: new Date(),
+      has_attachments: files.length > 0,
+      file_attachments: files.map((file, index) => ({
+        id: `temp-${index}`,
+        filename: file.name,
+        file_type: file.type.split("/")[0] || "unknown",
+        file_size: file.size,
+        mime_type: file.type,
+        created_at: new Date().toISOString(),
+      })),
     };
 
     set((state) => ({
@@ -186,17 +197,26 @@ export const useChatStore = create((set, get) => ({
     }));
 
     try {
+      // Prepare form data for multipart upload
+      const formData = new FormData();
+      formData.append("message", content);
+
+      if (currentThread.id) {
+        formData.append("conversation_id", currentThread.id);
+      }
+
+      // Add files to form data
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
+
       // Make API call to backend with authentication
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          message: content,
-          conversation_id: currentThread.id, // Can be null for new conversations
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -224,6 +244,9 @@ export const useChatStore = create((set, get) => ({
         timestamp: new Date(),
         sources: data.sources || [],
         tool_used: data.tool_used || null,
+        has_attachments:
+          data.file_attachments && data.file_attachments.length > 0,
+        file_attachments: data.file_attachments || [],
       };
 
       set((state) => {

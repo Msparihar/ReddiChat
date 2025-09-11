@@ -3,6 +3,7 @@ import AppLayout from './components/layout/AppLayout'
 import ChatArea from './components/chat/ChatArea'
 import Login from './components/auth/Login'
 import ThemeProvider from './contexts/ThemeContext'
+import { FileProvider } from './contexts/FileContext'
 import { useUIStore } from './stores/ui-store'
 import { useAuthStore } from './stores/auth-store'
 import AuthService from './services/auth-service'
@@ -104,9 +105,11 @@ function App() {
 
   return (
     <ThemeProvider>
-      <AppLayout>
-        <ChatArea />
-      </AppLayout>
+      <FileProvider>
+        <AppLayout>
+          <ChatArea />
+        </AppLayout>
+      </FileProvider>
     </ThemeProvider>
   )
 }

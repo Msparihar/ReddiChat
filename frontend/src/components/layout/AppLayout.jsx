@@ -4,11 +4,17 @@ import UpgradePopup from '../common/UpgradePopup'
 import AttachmentPopup from '../common/AttachmentPopup'
 import { useUIStore } from '../../stores/ui-store'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useFileContext } from '../../contexts/FileContext'
 import { cn } from '../../lib/utils'
 
 const AppLayout = ({ children }) => {
   const { isSidebarOpen, isSettingsOpen, isUpgradePopupOpen, isAttachmentPopupOpen, toggleUpgradePopup, toggleAttachmentPopup } = useUIStore()
-  const { colors } = useTheme()
+ const { colors } = useTheme()
+  const { addFiles } = useFileContext()
+
+  const handleFilesSelected = (files) => {
+    addFiles(files)
+  }
 
   return (
     <div className={cn("h-screen", colors.primary, colors.textPrimary)}>
@@ -42,7 +48,11 @@ const AppLayout = ({ children }) => {
       <UpgradePopup isOpen={isUpgradePopupOpen} onClose={toggleUpgradePopup} />
 
       {/* Attachment Popup */}
-      <AttachmentPopup isOpen={isAttachmentPopupOpen} onClose={toggleAttachmentPopup} />
+      <AttachmentPopup
+        isOpen={isAttachmentPopupOpen}
+        onClose={toggleAttachmentPopup}
+        onFilesSelected={handleFilesSelected}
+      />
     </div>
   )
 }

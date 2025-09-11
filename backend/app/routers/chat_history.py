@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.services.chat_service import ChatService
 from app.schemas.chat import Conversation
-from app.models.chat import Conversation as ConversationModel
+from app.models.chat import Conversation as ConversationModel, Message
+from app.models.file_attachment import MessageAttachment, FileAttachment
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from typing import List
@@ -14,6 +15,9 @@ import logging
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Add more detailed logging configuration
+import traceback
 
 router = APIRouter(
     prefix="/chat/history",
@@ -99,33 +103,74 @@ async def get_conversation_detail(
         Conversation: The complete conversation with all messages
     """
     try:
+        logger.info(f"Retrieving conversation {conversation_id} for user {user.id}")
+
         # Convert conversation_id to UUID if it's a string
         try:
             conversation_uuid = uuid.UUID(conversation_id)
         except ValueError:
+            logger.warning(f"Invalid conversation ID format: {conversation_id}")
             raise HTTPException(status_code=400, detail="Invalid conversation ID format")
 
-        # Get conversation for this user
+        # Get conversation for this user with eager loading of messages and their attachments
         conversation = (
             db.query(ConversationModel)
             .filter(ConversationModel.id == conversation_uuid, ConversationModel.user_id == user.id)
+            .options(
+                joinedload(ConversationModel.messages)
+                .joinedload(Message.attachments)
+                .joinedload(MessageAttachment.file_attachment)
+            )
             .first()
         )
 
         if not conversation:
+            logger.warning(f"Conversation {conversation_id} not found or does not belong to user {user.id}")
             raise HTTPException(status_code=404, detail="Conversation not found or does not belong to user")
 
-        # Eager load messages
-        db.refresh(conversation)
+        logger.info(f"Successfully retrieved conversation {conversation_id} with {len(conversation.messages)} messages")
 
-        # Convert to Pydantic model for proper serialization
-        from app.schemas.chat import Conversation as ConversationSchema
+        # Convert to Pydantic model for proper serialization and add file URLs
+        from app.schemas.chat import Conversation as ConversationSchema, Message as MessageSchema
+        from app.schemas.file_attachment import FileMetadata
+        from app.services.s3_service import get_s3_service
 
-        return ConversationSchema.model_validate(conversation)
+        s3_service = get_s3_service()
+
+        # Process messages to add file URLs
+        for message in conversation.messages:
+            if message.has_attachments and message.attachments:
+                file_attachments_with_urls = []
+                for attachment in message.attachments:
+                    if attachment.file_attachment:
+                        file_attachment = attachment.file_attachment
+                        file_metadata = FileMetadata(
+                            id=file_attachment.id,
+                            filename=file_attachment.original_filename,
+                            file_type=file_attachment.file_type,
+                            file_size=file_attachment.file_size,
+                            mime_type=file_attachment.mime_type,
+                            created_at=file_attachment.created_at,
+                            file_url=s3_service.generate_presigned_url(file_attachment.s3_key)
+                            if s3_service.is_available()
+                            else None,
+                        )
+                        file_attachments_with_urls.append(file_metadata)
+
+                # Set the populated file attachments directly on the message
+                message.file_attachments = file_attachments_with_urls
+                logger.debug(f"Added {len(file_attachments_with_urls)} file URLs to message {message.id}")
+
+        conversation_schema = ConversationSchema.model_validate(conversation)
+        logger.info(f"Successfully converted conversation {conversation_id} to schema with file URLs")
+
+        return conversation_schema
     except HTTPException:
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
+        logger.error(f"Error retrieving conversation {conversation_id}: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error retrieving conversation: {str(e)}")
 
 

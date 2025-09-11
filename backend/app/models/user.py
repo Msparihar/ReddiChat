@@ -27,6 +27,7 @@ class User(Base):
     # Relationships
     conversations = relationship("Conversation", back_populates="user")
     messages = relationship("Message", back_populates="user")
+    file_attachments = relationship("FileAttachment", back_populates="user")
 
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', name='{self.name}', avatar_url='{self.avatar_url}')>"

@@ -1,13 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useChatStore } from '../../stores/chat-store'
 import { cn } from '../../lib/utils'
 import RedditSource from './RedditSource'
 import MarkdownRenderer from './MarkdownRenderer'
+import FileAttachment from './FileAttachment'
+import FilePreviewModal from './FilePreviewModal'
 
 const MessageList = () => {
   const { messages, isLoading } = useChatStore()
   const messagesEndRef = useRef(null)
+  const [previewFile, setPreviewFile] = useState(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+
+  const handleFilePreview = (file) => {
+    setPreviewFile(file)
+    setIsPreviewOpen(true)
+  }
+
+  const handleClosePreview = () => {
+    setIsPreviewOpen(false)
+    setPreviewFile(null)
+  }
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -38,6 +52,19 @@ const MessageList = () => {
               <div className="px-4 py-6 bg-gray-900/30">
                 <div className="max-w-3xl mx-auto flex gap-4 justify-end">
                   <div className="max-w-2xl">
+                    {/* Display file attachments if they exist */}
+                    {message.has_attachments && message.file_attachments && message.file_attachments.length > 0 && (
+                      <div className="mb-3 space-y-2">
+                        {message.file_attachments.map((file, fileIndex) => (
+                          <FileAttachment
+                            key={fileIndex}
+                            file={file}
+                            showPreview={true}
+                            onPreview={handleFilePreview}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <div className="bg-blue-600 text-white px-4 py-3 rounded-2xl">
                       <div className="text-sm leading-relaxed whitespace-pre-wrap">
                         {message.content}
@@ -79,6 +106,23 @@ const MessageList = () => {
                       )}
                     </div>
 
+                    {/* Display file attachments for AI messages if they exist */}
+                    {message.has_attachments && message.file_attachments && message.file_attachments.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        <div className="text-sm font-medium text-gray-300 mb-2">
+                          Attached files:
+                        </div>
+                        {message.file_attachments.map((file, fileIndex) => (
+                          <FileAttachment
+                            key={fileIndex}
+                            file={file}
+                            showPreview={true}
+                            onPreview={handleFilePreview}
+                          />
+                        ))}
+                      </div>
+                    )}
+
                     {/* Display Reddit sources if available */}
                     {message.sources && message.sources.length > 0 && (
                       <div className="mt-6 space-y-3">
@@ -117,6 +161,13 @@ const MessageList = () => {
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* File Preview Modal */}
+      <FilePreviewModal
+        isOpen={isPreviewOpen}
+        file={previewFile}
+        onClose={handleClosePreview}
+      />
     </div>
   )
 }

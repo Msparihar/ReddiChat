@@ -3,8 +3,11 @@ from app.models.chat import Conversation, Message, MessageRole
 from app.models.user import User
 from app.schemas.chat import ChatRequest, ChatResponse, ConversationCreate, MessageCreate, RedditSource
 from app.agents import get_chat_response
+from app.core.logger import get_logger
 import uuid
 from typing import List, Optional
+
+logger = get_logger(__name__)
 
 
 class ChatService:
@@ -29,14 +32,17 @@ class ChatService:
                 .first()
             )
             if conversation:
+                logger.debug(f"📝 Found existing conversation: {conversation_id}")
                 return conversation
 
         # Create a new conversation
+        logger.debug("🆕 Creating new conversation")
         conversation_data = ConversationCreate(title="New Chat")
         db_conversation = Conversation(**conversation_data.model_dump(), user_id=self.user.id)
         self.db.add(db_conversation)
         self.db.commit()
         self.db.refresh(db_conversation)
+        logger.info(f"✅ Created conversation: {db_conversation.id}")
         return db_conversation
 
     def get_conversation_history(self, conversation_id: uuid.UUID) -> List[Message]:
@@ -94,14 +100,18 @@ class ChatService:
         Returns:
             ChatResponse: The chat response with the agent's reply
         """
+        logger.info(f"💬 Processing message: '{chat_request.message[:50]}...'")
+
         # Get or create conversation
         conversation = self.get_or_create_conversation(chat_request.conversation_id)
 
         # Save user message
         user_message = self.save_message(conversation.id, chat_request.message, MessageRole.USER)
+        logger.debug(f"💾 Saved user message: {user_message.id}")
 
         # Get conversation history
         history = self.get_conversation_history(conversation.id)
+        logger.debug(f"📚 Loaded {len(history)} messages from history")
 
         # Format history for the agent
         formatted_history = [
@@ -109,6 +119,7 @@ class ChatService:
         ]
 
         # Get response from the agent
+        logger.debug("🤖 Calling agent for response...")
         agent_result = get_chat_response(formatted_history)
 
         # Extract response content and sources
@@ -116,10 +127,13 @@ class ChatService:
         agent_sources = agent_result.get("sources", [])
         tool_used = agent_result.get("tool_used")
 
+        logger.info(f"🤖 Agent response: tool={tool_used}, sources={len(agent_sources)}")
+
         # Save agent message with sources
         agent_message = self.save_message(
             conversation.id, agent_response_content, MessageRole.ASSISTANT, sources=agent_sources, tool_used=tool_used
         )
+        logger.debug(f"💾 Saved agent message: {agent_message.id}")
 
         # Update conversation title if it's the first message
         if len(history) == 1:  # Only the user message we just added
@@ -128,6 +142,7 @@ class ChatService:
             )
             self.db.commit()
             self.db.refresh(conversation)
+            logger.debug(f"📝 Updated conversation title: {conversation.title}")
 
         # Update conversation updated_at timestamp
         self.db.commit()
@@ -136,6 +151,7 @@ class ChatService:
         # Convert agent sources to RedditSource objects
         reddit_sources = []
         if agent_sources:
+            logger.debug(f"🔗 Processing {len(agent_sources)} Reddit sources")
             for source in agent_sources:
                 try:
                     reddit_source = RedditSource(
@@ -151,12 +167,13 @@ class ChatService:
                     )
                     reddit_sources.append(reddit_source)
                 except Exception as e:
-                    # Log error but continue with other sources
-                    print(f"Error processing Reddit source: {e}")
+                    logger.error(f"❌ Error processing Reddit source: {e}")
 
+        logger.info(f"✅ Chat processing completed for conversation: {conversation.id}")
         return ChatResponse(
             response=agent_response_content,
             conversation_id=conversation.id,
+            message_id=agent_message.id,
             sources=reddit_sources,
             tool_used=tool_used,
         )
