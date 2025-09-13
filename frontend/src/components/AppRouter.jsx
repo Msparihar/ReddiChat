@@ -5,6 +5,7 @@ import LandingPage from './landing/LandingPage';
 import AppLayout from './layout/AppLayout';
 import ChatArea from './chat/ChatArea';
 import Login from './auth/Login';
+import SignInPage from './auth/SignInPage';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
@@ -18,8 +19,11 @@ const AppRouter = () => {
         {/* Landing page - accessible to all users */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Login page (fallback) */}
-        <Route path="/login" element={<Login />} />
+        {/* Login page */}
+        <Route path="/login" element={<SignInPage />} />
+
+        {/* Alternative sign-in page */}
+        <Route path="/signin" element={<SignInPage />} />
 
         {/* Protected chat route */}
         <Route
