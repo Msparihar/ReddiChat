@@ -34,7 +34,19 @@ const MarkdownRenderer = ({ content }) => {
       const code = String(children).replace(/\n$/, '')
       const codeId = `code-${Math.random().toString(36).substr(2, 9)}`
 
-      if (!inline && code) {
+      // Fix: More strict check for code blocks vs inline code
+      // Code blocks are identified by:
+      // 1. Having newlines (multiline content)
+      // 2. Having a language class (```language syntax)
+      // 3. Being explicitly marked as non-inline (inline === false)
+      // Everything else should be inline code
+      const hasNewlines = String(children).includes('\n')
+      const hasLanguageClass = className && className.includes('language-')
+      const isExplicitlyBlock = inline === false
+
+      const isCodeBlock = hasNewlines || hasLanguageClass || isExplicitlyBlock
+
+      if (isCodeBlock && code) {
         return (
           <div className="relative group my-4">
             {/* Language label and copy button */}
@@ -87,28 +99,15 @@ const MarkdownRenderer = ({ content }) => {
         )
       }
 
-      // Inline code - be more selective about what gets code styling
-      const codeText = String(children)
-
-      // Only style as code if it looks like actual code:
-      // - Contains programming syntax (=, (, ), {, }, ;, etc.)
-      // - Is a file extension or command
-      // - Contains version numbers or specific technical terms
-      const isActualCode = /[=(){};[\]<>]|^[a-z]+\.[a-z]{2,4}$|^[a-z]+ install|^npm |^pip |^git |^\w+\.\w+$|^\w+_\w+$|^[A-Z_]+$|api_key|config\.|\.py$|\.json$/.test(codeText.trim())
-
-      if (isActualCode) {
-        return (
-          <code
-            className="bg-gray-700/50 text-gray-200 px-1.5 py-0.5 rounded text-sm font-mono border border-gray-600"
-            {...props}
-          >
-            {children}
-          </code>
-        )
-      } else {
-        // For regular words wrongly marked as code, just return as normal text
-        return <span>{children}</span>
-      }
+      // Inline code (single backticks)
+      return (
+        <code
+          className="bg-red-900/20 text-red-300 px-1 font-mono text-sm"
+          {...props}
+        >
+          {children}
+        </code>
+      )
     },
 
     // Custom pre tag (handled by code component above)

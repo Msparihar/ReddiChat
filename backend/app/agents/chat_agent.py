@@ -112,7 +112,19 @@ def get_chat_response(messages: list) -> dict:
 
         for message in result_messages:
             if isinstance(message, AIMessage) and message.content:
-                final_response = message.content
+                # Ensure content is always a string
+                content = message.content
+                if isinstance(content, list):
+                    # If content is a list (multimodal), extract text parts
+                    text_parts = []
+                    for part in content:
+                        if isinstance(part, dict) and part.get("type") == "text":
+                            text_parts.append(part.get("text", ""))
+                        elif isinstance(part, str):
+                            text_parts.append(part)
+                    final_response = "\n".join(text_parts)
+                else:
+                    final_response = str(content)
                 logger.debug("✅ Found AI response")
             elif isinstance(message, ToolMessage):
                 try:
@@ -127,7 +139,20 @@ def get_chat_response(messages: list) -> dict:
         # If no final response found, get the last message
         if final_response is None:
             last_message = result_messages[-1]
-            final_response = last_message.content if hasattr(last_message, "content") else str(last_message)
+            content = last_message.content if hasattr(last_message, "content") else str(last_message)
+
+            # Ensure content is always a string
+            if isinstance(content, list):
+                # If content is a list (multimodal), extract text parts
+                text_parts = []
+                for part in content:
+                    if isinstance(part, dict) and part.get("type") == "text":
+                        text_parts.append(part.get("text", ""))
+                    elif isinstance(part, str):
+                        text_parts.append(part)
+                final_response = "\n".join(text_parts)
+            else:
+                final_response = str(content)
             logger.warning("⚠️ Using fallback response from last message")
 
         logger.info(f"✅ Chat response generated: tool={tool_used}, sources={len(tool_results)}")
