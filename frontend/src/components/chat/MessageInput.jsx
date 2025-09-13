@@ -51,7 +51,7 @@ const MessageInput = () => {
 
       <form onSubmit={handleSubmit} className="relative">
         {/* Input Container with integrated buttons */}
-        <div className={cn("relative border rounded-xl transition-colors flex items-end", colors.inputBg, colors.inputBorder, colors.inputFocus)}>
+        <div className={cn("relative border rounded-xl transition-colors flex items-end", colors.inputBg, colors.borderSecondary, colors.inputFocus)}>
           {/* Left side buttons */}
           <div className="flex items-center p-3 pb-3">
             <button
@@ -70,7 +70,7 @@ const MessageInput = () => {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything..."
+              placeholder="Ask about Reddit posts, search subreddits, or upload files..."
               className={cn("w-full bg-transparent py-3 pr-16 text-sm resize-none focus:outline-none min-h-[48px] max-h-32 placeholder:text-gray-400 scrollbar-thin pt-4", colors.textPrimary)}
               rows={1}
               style={{

@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth-store'
 
 const Login = () => {
   const { isAuthenticated } = useAuthStore()
+  const navigate = useNavigate()
 
   // Handle Google OAuth login
   const handleGoogleLogin = () => {
@@ -26,10 +28,9 @@ const Login = () => {
     console.log('Login component - isAuthenticated:', isAuthenticated)
     if (isAuthenticated) {
       console.log('User is authenticated, redirecting to chat page')
-      // Redirect to chat page
-      window.location.href = '/'
+      navigate('/chat')
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, navigate])
 
   return (
     <div className="min-h-screen bg-gray-850 flex items-center justify-center p-4">

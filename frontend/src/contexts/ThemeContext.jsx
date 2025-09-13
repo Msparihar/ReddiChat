@@ -49,29 +49,29 @@ export const ThemeProvider = ({ children }) => {
       bodyClass: 'dark'
     },
     light: {
-      // Main backgrounds
-      primary: 'bg-gray-50',
+      // Main backgrounds - unified to remove separations
+      primary: 'bg-white',
       secondary: 'bg-white',
-      tertiary: 'bg-gray-100/60',
+      tertiary: 'bg-gray-50/40',
 
       // Text colors
       textPrimary: 'text-gray-900',
       textSecondary: 'text-gray-800',
       textMuted: 'text-gray-600',
 
-      // Borders
-      borderPrimary: 'border-gray-200',
-      borderSecondary: 'border-gray-300/50',
-      borderHover: 'border-gray-400/60',
+      // Borders - make them invisible/minimal
+      borderPrimary: 'border-transparent',
+      borderSecondary: 'border-transparent',
+      borderHover: 'border-gray-200/60',
 
       // Interactive states
-      hover: 'hover:bg-gray-200/80',
+      hover: 'hover:bg-gray-100/60',
       hoverSecondary: 'hover:bg-gray-100',
 
-      // Input styles
-      inputBg: 'bg-white/80',
-      inputBorder: 'border-gray-300/50',
-      inputFocus: 'focus-within:border-gray-400 focus-within:bg-white',
+      // Input styles - unified with main background
+      inputBg: 'bg-white',
+      inputBorder: 'border-gray-200/40',
+      inputFocus: 'focus-within:border-gray-300 focus-within:bg-white',
 
       // Special elements
       overlay: 'bg-black/30',

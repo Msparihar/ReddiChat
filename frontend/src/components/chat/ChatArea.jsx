@@ -23,7 +23,7 @@ const ChatArea = () => {
       </div>
 
       {/* Message Input Area - Fixed at bottom */}
-      <div className={cn("flex-shrink-0 border-t", colors.primary, colors.borderSecondary)}>
+      <div className={cn("flex-shrink-0", colors.primary)}>
         <MessageInput />
       </div>
     </div>

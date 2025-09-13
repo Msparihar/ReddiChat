@@ -1,4 +1,4 @@
-import { Sparkles, BookOpen, Code, Lightbulb } from 'lucide-react'
+import { MessageSquare, Search, Upload, Zap, Sparkles } from 'lucide-react'
 import { useChatStore } from '../../stores/chat-store'
 import { useAuthStore } from '../../stores/auth-store'
 import { useUIStore } from '../../stores/ui-store'
@@ -12,17 +12,17 @@ const WelcomeScreen = () => {
   const { colors } = useTheme()
 
   const suggestedPrompts = [
-    "How does AI work?",
-    "Are black holes real?",
-    "How many Rs are in the word \"strawberry\"?",
-    "What is the meaning of life?"
+    "What's trending in r/technology today?",
+    "Find popular AI discussions on Reddit",
+    "Show me top posts from r/programming",
+    "Search for recent gaming news on Reddit"
   ]
 
   const categories = [
-    { icon: Sparkles, label: "Create", color: "text-purple-400" },
-    { icon: BookOpen, label: "Explore", color: "text-blue-400" },
-    { icon: Code, label: "Code", color: "text-green-400" },
-    { icon: Lightbulb, label: "Learn", color: "text-yellow-400" },
+    { icon: MessageSquare, label: "Ask Reddit", color: "text-orange-400" },
+    { icon: Search, label: "Search", color: "text-blue-400" },
+    { icon: Upload, label: "Upload", color: "text-green-400" },
+    { icon: Zap, label: "Quick Help", color: "text-yellow-400" },
   ]
 
   const handlePromptClick = (prompt) => {

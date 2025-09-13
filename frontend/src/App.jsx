@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import AppLayout from './components/layout/AppLayout'
-import ChatArea from './components/chat/ChatArea'
-import Login from './components/auth/Login'
+import AppRouter from './components/AppRouter'
 import ThemeProvider from './contexts/ThemeContext'
 import { FileProvider } from './contexts/FileContext'
 import { useUIStore } from './stores/ui-store'
@@ -55,7 +53,7 @@ function App() {
 
     if (accessToken) {
       console.log('Found access token in URL:', accessToken.substring(0, 20) + '...')
-      // Remove token from URL for security
+      // Remove token from URL for security - BUT don't redirect to /chat yet
       window.history.replaceState({}, document.title, "/")
 
       // Fetch user data and login user
@@ -63,6 +61,10 @@ function App() {
         .then(userData => {
           console.log('Successfully fetched user data:', userData)
           login(userData, accessToken)
+          // NOW redirect to chat after successful authentication
+          setTimeout(() => {
+            window.location.href = '/chat'
+          }, 100)
         })
         .catch(error => {
           console.error('Failed to fetch user data with URL token:', error)
@@ -70,13 +72,17 @@ function App() {
         })
     } else if (currentPath === '/auth/success') {
       console.log('Auth success path detected, trying cookie-based auth')
-      // Remove the success path from URL
+      // Remove the success path from URL - BUT don't redirect to /chat yet
       window.history.replaceState({}, document.title, "/")
 
       // Try to fetch user data with session cookie
       AuthService.getCurrentUser()
         .then(userData => {
           login(userData)
+          // NOW redirect to chat after successful authentication
+          setTimeout(() => {
+            window.location.href = '/chat'
+          }, 100)
         })
         .catch(error => {
           console.error('Failed to fetch user data with cookie:', error)
@@ -95,20 +101,10 @@ function App() {
     )
   }
 
-  if (!isAuthenticated) {
-    return (
-      <ThemeProvider>
-        <Login />
-      </ThemeProvider>
-    )
-  }
-
   return (
     <ThemeProvider>
       <FileProvider>
-        <AppLayout>
-          <ChatArea />
-        </AppLayout>
+        <AppRouter />
       </FileProvider>
     </ThemeProvider>
   )

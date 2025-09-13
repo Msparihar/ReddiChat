@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Plus, LogOut, Menu, Settings, Sun, Moon } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../../stores/ui-store'
 import { useChatStore } from '../../stores/chat-store'
 import { useAuthStore } from '../../stores/auth-store'
@@ -12,6 +13,7 @@ const Sidebar = () => {
   const { createNewThread } = useChatStore()
   const { user, logout } = useAuthStore()
   const { colors, toggleTheme, isDark } = useTheme()
+  const navigate = useNavigate()
 
   // Function to get user initials
   const getUserInitials = (name) => {
@@ -120,7 +122,13 @@ const Sidebar = () => {
                 >
                   <Menu className={cn("w-4 h-4", colors.textMuted)} />
                 </button>
-                <h1 className={cn("text-lg font-semibold", colors.textPrimary)}>ReddiChat</h1>
+                <button
+                  onClick={() => navigate('/')}
+                  className={cn("text-lg font-semibold hover:text-orange-400 transition-colors cursor-pointer", colors.textPrimary)}
+                  title="Go to landing page"
+                >
+                  ReddiChat
+                </button>
               </div>
               <div className="flex items-center gap-1">
                 <button

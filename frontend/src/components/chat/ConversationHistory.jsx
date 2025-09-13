@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth-store'
 import { useUIStore } from '../../stores/ui-store'
+import { useTheme } from '../../contexts/ThemeContext'
 import AuthService from '../../services/auth-service'
 import { useChatStore } from '../../stores/chat-store'
 import { format } from 'date-fns'
+import { cn } from '../../lib/utils'
 
 const ConversationHistory = () => {
   const { token } = useAuthStore()
   const { isSidebarOpen } = useUIStore()
+  const { colors, isDark } = useTheme()
   const { loadConversation, currentThread, syncThreadsWithAPI, deleteThread, initializeConversation } = useChatStore()
   const [conversations, setConversations] = useState([])
   const [loading, setLoading] = useState(true)
@@ -227,7 +230,7 @@ const ConversationHistory = () => {
 
   if (loading) {
     return (
-      <div className="p-4 text-center text-gray-400">
+      <div className={cn("p-4 text-center", colors.textMuted)}>
         Loading conversation history...
       </div>
     )
@@ -242,7 +245,7 @@ const ConversationHistory = () => {
             setError(null)
             setPage(1) // Reset to first page and try again
           }}
-          className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+          className={cn("px-3 py-1 text-xs rounded transition-colors", isDark ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-800")}
         >
           Try Again
         </button>
@@ -259,14 +262,14 @@ const ConversationHistory = () => {
     <div className="flex-1 overflow-y-auto">
       <div className="p-2">
         {conversations.length === 0 ? (
-          <div className="text-gray-50 text-sm text-center py-8">
+          <div className={cn("text-sm text-center py-8", colors.textMuted)}>
             No conversations yet
           </div>
         ) : (
           <>
             {/* Keyboard navigation hint */}
             {conversations.length > 0 && (
-              <div className="px-2 pb-1 text-xs text-gray-500 text-center">
+              <div className={cn("px-2 pb-1 text-xs text-center", colors.textMuted)}>
                 Use ↑↓ to navigate, Enter to select, Ctrl+Del to delete
               </div>
             )}
@@ -285,13 +288,15 @@ const ConversationHistory = () => {
                     onFocus={() => setFocusedIndex(index)}
                     onBlur={() => setFocusedIndex(-1)}
                     disabled={isLoading || isDeleting}
-                    className={`w-full p-2 rounded-md mb-1 transition-colors flex flex-col text-left relative ${
+                    className={cn(
+                      'w-full p-2 rounded-md mb-1 transition-colors flex flex-col text-left relative',
                       isActive
-                        ? 'bg-gray-700 text-white'
+                        ? isDark ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900'
                         : isFocused
-                        ? 'bg-gray-750 ring-2 ring-blue-500'
-                        : 'hover:bg-gray-800'
-                    } ${isLoading || isDeleting ? 'opacity-50 cursor-wait' : ''}`}
+                        ? isDark ? 'bg-gray-750 ring-2 ring-blue-500' : 'bg-gray-100 ring-2 ring-blue-500'
+                        : colors.hover,
+                      isLoading || isDeleting ? 'opacity-50 cursor-wait' : ''
+                    )}
                     aria-label={`Select chat: ${conversation.title}`}
                   >
                     <div
@@ -300,7 +305,7 @@ const ConversationHistory = () => {
                     >
                       {conversation.title}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
+                    <div className={cn("text-xs mt-0.5", colors.textMuted)}>
                       {format(new Date(conversation.updated_at), 'MMM d, yyyy')}
                     </div>
                     {isLoading && (
@@ -317,20 +322,20 @@ const ConversationHistory = () => {
                       confirmDelete(conversation.id)
                     }}
                     disabled={isLoading || isDeleting}
-                    className="absolute top-2 right-2 p-1 rounded hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className={cn("absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity", isDark ? "hover:bg-red-600" : "hover:bg-red-100")}
                     aria-label={`Delete chat: ${conversation.title}`}
                   >
                     {isDeleting ? (
                       <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin"></div>
                     ) : (
-                      <Trash2 className="w-3 h-3 text-gray-400 hover:text-white" />
+                      <Trash2 className={cn("w-3 h-3", isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-red-600")} />
                     )}
                   </button>
 
                   {/* Delete Confirmation Dialog */}
                   {showingDeleteConfirm && (
-                    <div className="absolute inset-0 bg-gray-800 rounded-md p-2 flex flex-col justify-center z-10">
-                      <div className="text-xs text-center mb-2">
+                    <div className={cn("absolute inset-0 rounded-md p-2 flex flex-col justify-center z-10", isDark ? "bg-gray-800" : "bg-gray-100")}>
+                      <div className={cn("text-xs text-center mb-2", colors.textPrimary)}>
                         Delete this conversation?
                       </div>
                       <div className="flex gap-1">
@@ -342,7 +347,7 @@ const ConversationHistory = () => {
                         </button>
                         <button
                           onClick={cancelDelete}
-                          className="flex-1 px-2 py-1 text-xs bg-gray-600 hover:bg-gray-700 rounded text-white"
+                          className={cn("flex-1 px-2 py-1 text-xs rounded", isDark ? "bg-gray-600 hover:bg-gray-700 text-white" : "bg-gray-300 hover:bg-gray-400 text-gray-800")}
                         >
                           Cancel
                         </button>
@@ -359,21 +364,37 @@ const ConversationHistory = () => {
                 <button
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 1}
-                  className="px-3 py-1 text-sm rounded-md bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
+                  className={cn(
+                    "p-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center",
+                    isDark
+                      ? "bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
+                      : "bg-gray-200 hover:bg-gray-300 text-gray-600 hover:text-gray-800",
+                    "hover:scale-105 active:scale-95"
+                  )}
+                  title="Previous page"
+                  aria-label="Previous page"
                 >
-                  Previous
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
 
-                <span className="text-sm text-gray-400">
-                  Page {page} of {totalPages}
+                <span className={cn("text-sm px-3 py-1 rounded-md", colors.textMuted, isDark ? "bg-gray-800" : "bg-gray-100")}>
+                  {page} / {totalPages}
                 </span>
 
                 <button
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page === totalPages}
-                  className="px-3 py-1 text-sm rounded-md bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
+                  className={cn(
+                    "p-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center",
+                    isDark
+                      ? "bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
+                      : "bg-gray-200 hover:bg-gray-300 text-gray-600 hover:text-gray-800",
+                    "hover:scale-105 active:scale-95"
+                  )}
+                  title="Next page"
+                  aria-label="Next page"
                 >
-                  Next
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             )}
