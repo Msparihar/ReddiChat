@@ -69,6 +69,13 @@ class Settings(BaseSettings):
         "application/pdf",
     }
 
+    # Email Configuration
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SENDER_EMAIL: Optional[str] = os.getenv("SENDER_EMAIL")
+    SENDER_EMAIL_PASSWORD: Optional[str] = os.getenv("SENDER_EMAIL_PASSWORD")
+    NOTIFICATION_EMAIL: str = os.getenv("NOTIFICATION_EMAIL", "manishsparihar2020@gmail.com")
+
     class Config:
         case_sensitive = True
         env_file = ".env"

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
 from app.services.auth_service import AuthService
+from app.services.email_service import get_email_service
 from app.schemas.auth import User as UserSchema, UserCreate
 from app.models.user import OAuthProvider, User
 from datetime import timedelta
@@ -250,6 +251,16 @@ async def oauth_callback(
                 provider_id=str(provider_id),
             )
             user = auth_service.update_user(user, user_data)
+
+        # Send email notification for Google OAuth logins
+        try:
+            email_service = get_email_service()
+            await email_service.send_login_notification(
+                user_name=user.name or "Unknown", user_email=user.email, provider=provider.value, user_id=str(user.id)
+            )
+        except Exception as e:
+            # Log the error but don't fail the login process
+            logger.error(f"Failed to send login notification email: {str(e)}")
 
         # Create access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

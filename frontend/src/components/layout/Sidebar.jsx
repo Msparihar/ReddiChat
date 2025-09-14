@@ -93,7 +93,7 @@ const Sidebar = () => {
     <aside
       data-sidebar
       className={cn(
-        colors.secondary, colors.borderPrimary, "border-r transition-all duration-300 flex flex-col z-40",
+        colors.sidebar, colors.borderPrimary, "border-r transition-all duration-300 flex flex-col z-40",
         // Desktop: normal sidebar behavior - full height
         "md:fixed md:top-0 md:bottom-0 md:left-0",
         // Mobile: overlay sidebar

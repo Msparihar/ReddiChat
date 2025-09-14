@@ -17,29 +17,30 @@ export const ThemeProvider = ({ children }) => {
   // Theme configuration
   const themes = {
     dark: {
-      // Main backgrounds
-      primary: 'bg-gray-850',
+      // Main backgrounds - unified to eliminate separations
+      primary: 'bg-gray-900',
       secondary: 'bg-gray-900',
-      tertiary: 'bg-gray-800/60',
+      sidebar: 'bg-gray-950', // Slightly darker for sidebar
+      tertiary: 'bg-gray-800/40',
 
       // Text colors
       textPrimary: 'text-gray-100',
       textSecondary: 'text-gray-200',
       textMuted: 'text-gray-400',
 
-      // Borders
-      borderPrimary: 'border-gray-750',
-      borderSecondary: 'border-gray-700/50',
-      borderHover: 'border-gray-600/60',
+      // Borders - make them invisible/subtle
+      borderPrimary: 'border-transparent',
+      borderSecondary: 'border-transparent',
+      borderHover: 'border-gray-700/30',
 
       // Interactive states
-      hover: 'hover:bg-gray-800/80',
-      hoverSecondary: 'hover:bg-gray-800',
+      hover: 'hover:bg-gray-800/60',
+      hoverSecondary: 'hover:bg-gray-800/40',
 
-      // Input styles
-      inputBg: 'bg-gray-800/60',
-      inputBorder: 'border-gray-700/50',
-      inputFocus: 'focus-within:border-gray-600 focus-within:bg-gray-800/80',
+      // Input styles - unified with main background
+      inputBg: 'bg-gray-900',
+      inputBorder: 'border-gray-800/30',
+      inputFocus: 'focus-within:border-gray-700/50 focus-within:bg-gray-900',
 
       // Special elements
       overlay: 'bg-black/50',
@@ -52,7 +53,8 @@ export const ThemeProvider = ({ children }) => {
       // Main backgrounds - unified to remove separations
       primary: 'bg-white',
       secondary: 'bg-white',
-      tertiary: 'bg-gray-50/40',
+      sidebar: 'bg-gray-50', // Slightly darker for sidebar
+      tertiary: 'bg-gray-100',
 
       // Text colors
       textPrimary: 'text-gray-900',
@@ -61,11 +63,11 @@ export const ThemeProvider = ({ children }) => {
 
       // Borders - make them invisible/minimal
       borderPrimary: 'border-transparent',
-      borderSecondary: 'border-transparent',
-      borderHover: 'border-gray-200/60',
+      borderSecondary: 'border-gray-200',
+      borderHover: 'border-gray-300',
 
       // Interactive states
-      hover: 'hover:bg-gray-100/60',
+      hover: 'hover:bg-gray-200',
       hoverSecondary: 'hover:bg-gray-100',
 
       // Input styles - unified with main background

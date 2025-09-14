@@ -15,6 +15,7 @@ const MessageList = () => {
   const [previewFile, setPreviewFile] = useState(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
+
   const handleFilePreview = (file) => {
     setPreviewFile(file)
     setIsPreviewOpen(true)
@@ -51,7 +52,7 @@ const MessageList = () => {
           <div key={message.id}>
             {message.role === 'user' ? (
               // User message - keep bubble style
-              <div className={cn("px-4 py-6", isDark ? "bg-gray-900/30" : "bg-gray-50/40")}>
+              <div className={cn("px-4 py-6", colors.primary)}>
                 <div className="max-w-3xl mx-auto flex gap-4 justify-end">
                   <div className="max-w-2xl">
                     {/* Display file attachments if they exist */}
@@ -83,7 +84,7 @@ const MessageList = () => {
               </div>
             ) : (
               // AI message - ChatGPT style (no bubble)
-              <div className={cn("px-4 py-6", isDark ? "bg-gray-900/20 border-b border-gray-800/50" : "bg-white")}>
+              <div className={cn("px-4 py-6", colors.primary)}>
                 <div className="max-w-3xl mx-auto">
                   <div className="flex-1 min-w-0">
                     <MarkdownRenderer content={message.content} />
@@ -139,14 +140,12 @@ const MessageList = () => {
 
         {/* Loading Message */}
         {isLoading && (
-          <div className={cn("px-4 py-6", isDark ? "bg-gray-900/20 border-b border-gray-800/50" : "bg-white")}>
+          <div className="px-4 py-6">
             <div className="max-w-3xl mx-auto">
-              <div className="flex-1 min-w-0 pt-2">
-                <div className="flex items-center gap-1">
-                  <div className={cn("w-2 h-2 rounded-full animate-bounce", colors.textMuted)} style={{ animationDelay: '0ms' }}></div>
-                  <div className={cn("w-2 h-2 rounded-full animate-bounce", colors.textMuted)} style={{ animationDelay: '150ms' }}></div>
-                  <div className={cn("w-2 h-2 rounded-full animate-bounce", colors.textMuted)} style={{ animationDelay: '300ms' }}></div>
-                </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
             </div>
           </div>

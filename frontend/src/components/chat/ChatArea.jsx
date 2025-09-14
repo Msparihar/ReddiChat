@@ -6,15 +6,22 @@ import MessageInput from './MessageInput'
 import { cn } from '../../lib/utils'
 
 const ChatArea = () => {
-  const { currentThread, messages } = useChatStore()
+  const { currentThread, messages, isLoading } = useChatStore()
   const { colors } = useTheme()
+
 
   return (
     <div className={cn("flex-1 flex flex-col h-full", colors.primary)}>
       {/* Chat Messages Area - Scrollable */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {!currentThread || messages.length === 0 ? (
-          <WelcomeScreen />
+          isLoading ? (
+            <div className="h-full overflow-y-auto">
+              <MessageList />
+            </div>
+          ) : (
+            <WelcomeScreen />
+          )
         ) : (
           <div className="h-full overflow-y-auto">
             <MessageList />
