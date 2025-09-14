@@ -152,7 +152,7 @@ const MarkdownRenderer = ({ content }) => {
       </ul>
     ),
     ol: ({ children }) => (
-      <ol className={cn("list-decimal list-inside space-y-2 mb-4 ml-4", colors.textPrimary)}>
+      <ol className={cn("list-decimal list-outside space-y-2 mb-4 ml-4", colors.textPrimary)}>
         {children}
       </ol>
     ),

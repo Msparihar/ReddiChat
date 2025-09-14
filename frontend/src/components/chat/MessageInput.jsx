@@ -8,14 +8,14 @@ import { cn } from '../../lib/utils'
 
 const MessageInput = () => {
   const [message, setMessage] = useState('')
-  const { sendMessage, isLoading } = useChatStore()
+  const { sendMessage, isLoading, isStreaming } = useChatStore()
   const { toggleAttachmentPopup } = useUIStore()
   const { colors } = useTheme()
   const { selectedFiles, removeFile, clearFiles } = useFileContext()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if ((!message.trim() && selectedFiles.length === 0) || isLoading) return
+    if ((!message.trim() && selectedFiles.length === 0) || isLoading || isStreaming) return
 
     await sendMessage(message, selectedFiles)
     setMessage('')
@@ -70,8 +70,9 @@ const MessageInput = () => {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about Reddit posts, search subreddits, or upload files..."
-              className={cn("w-full bg-transparent py-3 pr-16 text-sm resize-none focus:outline-none min-h-[48px] max-h-32 placeholder:text-gray-400 scrollbar-thin pt-4", colors.textPrimary)}
+              placeholder={isStreaming ? "AI is responding..." : "Ask about Reddit posts, search subreddits, or upload files..."}
+              disabled={isLoading || isStreaming}
+              className={cn("w-full bg-transparent py-3 pr-16 text-sm resize-none focus:outline-none min-h-[48px] max-h-32 placeholder:text-gray-400 scrollbar-thin pt-4", colors.textPrimary, (isLoading || isStreaming) && "opacity-50 cursor-not-allowed")}
               rows={1}
               style={{
                 height: 'auto',
@@ -87,14 +88,14 @@ const MessageInput = () => {
             <div className="absolute right-3 bottom-3">
               <button
                 type="submit"
-                disabled={!message.trim() || isLoading}
+                disabled={!message.trim() || isLoading || isStreaming}
                 className={cn(
                   "p-1.5 rounded-md transition-colors",
-                  message.trim() && !isLoading
+                  message.trim() && !isLoading && !isStreaming
                     ? "bg-purple-600 hover:bg-purple-700 text-white"
                     : "bg-gray-700/50 text-gray-500 cursor-not-allowed"
                 )}
-                title="Send message"
+                title={isStreaming ? "AI is responding..." : "Send message"}
               >
                 <Send className="w-4 h-4" />
               </button>

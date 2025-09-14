@@ -4,11 +4,11 @@ from app.models.file_attachment import FileAttachment, MessageAttachment
 from app.models.user import User
 from app.schemas.chat import ChatResponse, ConversationCreate, MessageCreate, RedditSource
 from app.schemas.file_attachment import FileMetadata
-from app.agents.chat_agent import get_chat_response_multimodal
+from app.agents.chat_agent import get_chat_response_multimodal, get_chat_response_stream
 from app.services.file_service import FileProcessingService
 from app.services.s3_service import get_s3_service
 import uuid
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, AsyncGenerator
 from datetime import datetime, timedelta
 import logging
 
@@ -23,12 +23,15 @@ class ChatServiceMultimodal:
         self.user = user
         self.file_service = FileProcessingService(db, user, get_s3_service())
 
-    def get_or_create_conversation(self, conversation_id: Optional[uuid.UUID] = None) -> Conversation:
+    def get_or_create_conversation(
+        self, conversation_id: Optional[uuid.UUID] = None, initial_title: Optional[str] = None
+    ) -> Conversation:
         """
         Get an existing conversation or create a new one
 
         Args:
             conversation_id: Optional conversation ID
+            initial_title: Optional title for new conversations (defaults to "New Chat")
 
         Returns:
             Conversation: The conversation object
@@ -42,8 +45,9 @@ class ChatServiceMultimodal:
             if conversation:
                 return conversation
 
-        # Create a new conversation
-        conversation_data = ConversationCreate(title="New Chat")
+        # Create a new conversation with provided title or default
+        title = initial_title if initial_title else "New Chat"
+        conversation_data = ConversationCreate(title=title)
         db_conversation = Conversation(**conversation_data.model_dump(), user_id=self.user.id)
         self.db.add(db_conversation)
         self.db.commit()
@@ -221,8 +225,9 @@ class ChatServiceMultimodal:
             ChatResponse: The chat response with the agent's reply
         """
         try:
-            # Get or create conversation
-            conversation = self.get_or_create_conversation(conversation_id)
+            # Get or create conversation with initial title from first message
+            initial_title = message[:50] + "..." if len(message) > 50 else message
+            conversation = self.get_or_create_conversation(conversation_id, initial_title)
 
             # Process uploaded files
             processed_files = []
@@ -273,11 +278,7 @@ class ChatServiceMultimodal:
                 tool_used=tool_used,
             )
 
-            # Update conversation title if it's the first exchange
-            if len(chat_history) == 0:  # No previous messages
-                conversation.title = message[:50] + "..." if len(message) > 50 else message
-                self.db.commit()
-                self.db.refresh(conversation)
+            # Title is already set during conversation creation, no need to update here
 
             # Convert agent sources to RedditSource objects
             reddit_sources = []
@@ -332,6 +333,147 @@ class ChatServiceMultimodal:
             self.db.rollback()
             logger.error(f"Error processing chat message with files: {str(e)}")
             raise Exception(f"Failed to process chat message: {str(e)}")
+
+    async def process_chat_message_with_files_stream(
+        self, message: str, files: List[Any], conversation_id: Optional[uuid.UUID] = None
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Process a chat message with optional file attachments via streaming
+
+        Args:
+            message: Text message content
+            files: List of uploaded files (FastAPI UploadFile objects)
+            conversation_id: Optional conversation ID
+
+        Yields:
+            Dict: Streaming events with content chunks, tools, and final response
+        """
+        user_message = None
+        try:
+            # Get or create conversation with initial title from first message
+            initial_title = message[:50] + "..." if len(message) > 50 else message
+            conversation = self.get_or_create_conversation(conversation_id, initial_title)
+
+            # Process uploaded files
+            processed_files = []
+            stored_files = []
+
+            for file in files:
+                # Process file for LLM consumption
+                file_data = await self.file_service.process_uploaded_file(file)
+                processed_files.append(file_data)
+
+                # Store file in S3 (if not duplicate)
+                if not file_data.get("is_duplicate", False):
+                    stored_file = await self.file_service.store_file_in_s3(file_data)
+                    stored_files.append(stored_file)
+                else:
+                    # Find existing file record
+                    existing_file = self.db.query(FileAttachment).filter(FileAttachment.id == file_data["id"]).first()
+                    if existing_file:
+                        stored_files.append(existing_file)
+
+            # Save user message with attachments early
+            user_message = self.save_message_with_attachments(conversation.id, message, MessageRole.USER, stored_files)
+            self.db.commit()  # Commit user message
+
+            # Create multimodal message for LLM
+            if processed_files:
+                multimodal_content = self.file_service.create_multimodal_content(message, processed_files)
+                llm_message = {"role": "user", "content": multimodal_content}
+            else:
+                llm_message = {"role": "user", "content": message}
+
+            # Get chat history with dereferenced files if needed
+            chat_history = await self.get_conversation_history_with_files(conversation.id)
+
+            # Build all messages for agent (chat_history already includes the current message)
+            all_messages = chat_history
+
+            # Stream from agent
+            async for event in get_chat_response_stream(all_messages):
+                if event["type"] == "content":
+                    yield {
+                        "type": "content",
+                        "delta": event["delta"],
+                        "conversation_id": str(conversation.id),
+                    }
+                elif event["type"] == "tool_start":
+                    yield {
+                        "type": "tool_start",
+                        "tool": event["tool"],
+                        "conversation_id": str(conversation.id),
+                    }
+                elif event["type"] == "tool_end":
+                    yield {
+                        "type": "tool_end",
+                        "output": event["output"],
+                        "conversation_id": str(conversation.id),
+                    }
+                elif event["type"] == "done":
+                    # Save agent message with full content
+                    agent_message = self.save_message_with_attachments(
+                        conversation.id,
+                        event["content"],
+                        MessageRole.ASSISTANT,
+                        sources=event["sources"],
+                        tool_used=event["tool_used"],
+                    )
+
+                    # Title is already set during conversation creation, no need to update here
+
+                    # Generate file URLs
+                    s3_service = get_s3_service()
+                    file_attachments_with_urls = []
+                    for file_attachment in stored_files:
+                        file_metadata = FileMetadata(
+                            id=file_attachment.id,
+                            filename=file_attachment.original_filename,
+                            file_type=file_attachment.file_type,
+                            file_size=file_attachment.file_size,
+                            mime_type=file_attachment.mime_type,
+                            created_at=file_attachment.created_at,
+                            file_url=s3_service.generate_presigned_url(file_attachment.s3_key)
+                            if s3_service.is_available()
+                            else None,
+                        )
+                        file_attachments_with_urls.append(file_metadata)
+
+                    # Convert sources to RedditSource objects
+                    reddit_sources = event["sources"]  # Already converted in agent
+
+                    yield {
+                        "type": "done",
+                        "content": event["content"],
+                        "conversation_id": str(conversation.id),
+                        "message_id": str(agent_message.id),
+                        "sources": reddit_sources,
+                        "tool_used": event["tool_used"],
+                        "files_processed": len(stored_files),
+                        "file_attachments": file_attachments_with_urls,
+                    }
+                elif event["type"] == "error":
+                    yield {
+                        "type": "error",
+                        "content": event["content"],
+                        "conversation_id": str(conversation.id),
+                    }
+                    # Don't save assistant, but user message is already saved
+
+            logger.info(f"✅ Streaming chat completed: conv_id={conversation.id}")
+
+        except Exception as e:
+            logger.error(f"Error in streaming chat: {str(e)}")
+            if user_message:
+                # Optionally delete user message on error, but for now keep it
+                pass
+            yield {
+                "type": "error",
+                "content": f"Failed to process chat message: {str(e)}",
+                "conversation_id": str(conversation.id) if "conversation" in locals() else None,
+            }
+            if hasattr(self, "db") and self.db:
+                self.db.rollback()
 
 
 def get_chat_service_multimodal(db: Session, user: User) -> ChatServiceMultimodal:

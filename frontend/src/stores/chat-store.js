@@ -1,5 +1,13 @@
 import { create } from "zustand";
 import { useAuthStore } from "./auth-store";
+import {
+  generateUUID,
+  parseSSEStream,
+  handleStreamError,
+  debounce,
+  createTimeout,
+  validateSSEEvent,
+} from "../lib/streaming";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -14,12 +22,124 @@ export const useChatStore = create((set, get) => ({
   // State for conversation ID
   conversationId: null,
 
+  // Streaming state
+  isStreaming: false,
+  pendingMessage: null,
+  currentTool: null,
+
+  // Error recovery state
+  failedMessage: null,
+  retryCount: 0,
+  maxRetries: 3,
+
+  // Streaming helper functions
+  startStreaming: (pendingMessage) => {
+    set({
+      isStreaming: true,
+      pendingMessage,
+      currentTool: null,
+    });
+  },
+
+  updateStreamingContent: (delta) => {
+    set((state) => {
+      if (!state.pendingMessage) return state;
+
+      return {
+        pendingMessage: {
+          ...state.pendingMessage,
+          content: state.pendingMessage.content + delta,
+        },
+        messages: state.messages.map((msg) =>
+          msg.id === state.pendingMessage.id
+            ? { ...msg, content: msg.content + delta }
+            : msg
+        ),
+      };
+    });
+  },
+
+  updateCurrentTool: (tool) => {
+    set({ currentTool: tool });
+  },
+
+  finishStreaming: (finalMessage) => {
+    set((state) => {
+      const updatedMessages = state.messages.map((msg) =>
+        msg.id === state.pendingMessage?.id ? finalMessage : msg
+      );
+
+      return {
+        isStreaming: false,
+        pendingMessage: null,
+        currentTool: null,
+        messages: updatedMessages,
+        isLoading: false,
+      };
+    });
+  },
+
+  handleStreamError: (errorMessage, canRetry = true) => {
+    set((state) => {
+      const errorMessageObj = {
+        id: state.pendingMessage?.id || generateUUID(),
+        content: errorMessage,
+        role: "assistant",
+        timestamp: new Date(),
+        sources: [],
+        tool_used: null,
+        has_attachments: false,
+        file_attachments: [],
+        isError: true,
+        canRetry: canRetry && state.retryCount < state.maxRetries,
+        retryCount: state.retryCount,
+      };
+
+      const updatedMessages = state.pendingMessage
+        ? state.messages.map((msg) =>
+            msg.id === state.pendingMessage.id ? errorMessageObj : msg
+          )
+        : [...state.messages, errorMessageObj];
+
+      return {
+        isStreaming: false,
+        pendingMessage: null,
+        currentTool: null,
+        messages: updatedMessages,
+        isLoading: false,
+        failedMessage: canRetry ? state.pendingMessage : null,
+      };
+    });
+  },
+
+  retryFailedMessage: async () => {
+    const { failedMessage, retryCount, maxRetries } = get();
+
+    if (!failedMessage || retryCount >= maxRetries) {
+      return;
+    }
+
+    set({ retryCount: retryCount + 1 });
+
+    // Remove the error message
+    set((state) => ({
+      messages: state.messages.filter((msg) => !msg.isError),
+      failedMessage: null,
+    }));
+
+    // Retry the message
+    await get().sendMessage(
+      failedMessage.content,
+      failedMessage.file_attachments || []
+    );
+  },
+
   // Actions
   initializeConversation: () => {
     // Create a new thread without a specific ID - the server will assign one
     const newThread = {
       id: null, // Will be set by server on first message
-      title: "New Chat",
+      title: "New Chat", // Will be updated with actual query when first message is sent
       createdAt: new Date(),
       lastMessage: null,
     };
@@ -167,13 +287,7 @@ export const useChatStore = create((set, get) => ({
     }
 
     // Generate a UUID for the user message
-    const userMessageId = crypto.randomUUID
-      ? crypto.randomUUID()
-      : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-          const r = (Math.random() * 16) | 0;
-          const v = c == "x" ? r : (r & 0x3) | 0x8;
-          return v.toString(16);
-        });
+    const userMessageId = generateUUID();
 
     const userMessage = {
       id: userMessageId,
@@ -191,10 +305,38 @@ export const useChatStore = create((set, get) => ({
       })),
     };
 
+    // Add user message immediately
     set((state) => ({
       messages: [...state.messages, userMessage],
       isLoading: true,
     }));
+
+    // Create pending AI message for streaming
+    const pendingMessageId = generateUUID();
+    const pendingMessage = {
+      id: pendingMessageId,
+      content: "",
+      role: "assistant",
+      timestamp: new Date(),
+      sources: [],
+      tool_used: null,
+      has_attachments: false,
+      file_attachments: [],
+      isPending: true,
+    };
+
+    // Add pending message and start streaming
+    set((state) => ({
+      messages: [...state.messages, pendingMessage],
+      isStreaming: true,
+      pendingMessage,
+      currentTool: null,
+    }));
+
+    // Debounced content update to prevent excessive re-renders
+    const debouncedUpdateContent = debounce((delta) => {
+      get().updateStreamingContent(delta);
+    }, 50);
 
     try {
       // Prepare form data for multipart upload
@@ -210,8 +352,8 @@ export const useChatStore = create((set, get) => ({
         formData.append("files", file);
       });
 
-      // Make API call to backend with authentication
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/`, {
+      // Make streaming API call to backend
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/stream`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -223,56 +365,112 @@ export const useChatStore = create((set, get) => ({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      let hasReceivedContent = false;
+      let finalConversationId = null;
+      let finalMessageId = null;
+      let finalSources = [];
+      let finalToolUsed = null;
+      let finalFileAttachments = [];
 
-      // Update conversation ID from server response to ensure consistency
-      const serverConversationId = data.conversation_id;
+      // Parse the SSE stream
+      await parseSSEStream(
+        response,
+        // onEvent callback
+        (event) => {
+          if (!validateSSEEvent(event)) {
+            console.warn("Invalid SSE event received:", event);
+            return;
+          }
 
-      // Generate a UUID for the AI message
-      const aiMessageId = crypto.randomUUID
-        ? crypto.randomUUID()
-        : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-            const r = (Math.random() * 16) | 0;
-            const v = c == "x" ? r : (r & 0x3) | 0x8;
-            return v.toString(16);
+          switch (event.type) {
+            case "content":
+              if (!hasReceivedContent) {
+                // Hide loader on first content chunk
+                set({ isLoading: false });
+                hasReceivedContent = true;
+              }
+              debouncedUpdateContent(event.delta);
+              break;
+
+            case "tool_start":
+              get().updateCurrentTool(event.tool);
+              break;
+
+            case "tool_end":
+              get().updateCurrentTool(null);
+              break;
+
+            case "done":
+              finalConversationId = event.conversation_id;
+              finalMessageId = event.message_id;
+              finalSources = event.sources || [];
+              finalToolUsed = event.tool_used || null;
+              finalFileAttachments = event.file_attachments || [];
+
+              // Create final message
+              const finalMessage = {
+                id: finalMessageId || pendingMessageId,
+                content: event.content || get().pendingMessage?.content || "",
+                role: "assistant",
+                timestamp: new Date(),
+                sources: finalSources,
+                tool_used: finalToolUsed,
+                has_attachments: finalFileAttachments.length > 0,
+                file_attachments: finalFileAttachments,
+                isPending: false,
+              };
+
+              // Update conversation and thread info
+              set((state) => {
+                const updatedThread = state.currentThread
+                  ? {
+                      ...state.currentThread,
+                      id: finalConversationId,
+                      lastMessage: finalMessage,
+                      title:
+                        state.messages.length === 1 // Only first message
+                          ? content.length > 50
+                            ? content.substring(0, 50) + "..."
+                            : content
+                          : state.currentThread.title,
+                    }
+                  : null;
+
+                return {
+                  conversationId: finalConversationId,
+                  currentThread: updatedThread,
+                  threads: state.threads.map((thread) =>
+                    thread.id === state.currentThread?.id
+                      ? updatedThread
+                      : thread
+                  ),
+                };
+              });
+
+              // Finish streaming
+              get().finishStreaming(finalMessage);
+              break;
+
+            case "error":
+              get().handleStreamError(
+                event.content ||
+                  "An error occurred while processing your message"
+              );
+              break;
+          }
+        },
+        // onError callback
+        (error) => {
+          console.error("Stream parsing error:", error);
+          const errorInfo = handleStreamError(error, (message, canRetry) => {
+            get().handleStreamError(message, canRetry);
           });
-
-      const aiMessage = {
-        id: aiMessageId,
-        content: data.response,
-        role: "assistant",
-        timestamp: new Date(),
-        sources: data.sources || [],
-        tool_used: data.tool_used || null,
-        has_attachments:
-          data.file_attachments && data.file_attachments.length > 0,
-        file_attachments: data.file_attachments || [],
-      };
-
-      set((state) => {
-        // Update current thread and conversation ID to match server
-        const updatedThread = state.currentThread
-          ? {
-              ...state.currentThread,
-              id: serverConversationId,
-              lastMessage: aiMessage,
-              title:
-                state.messages.length === 0
-                  ? content
-                  : state.currentThread.title,
-            }
-          : null;
-
-        return {
-          messages: [...state.messages, aiMessage],
-          isLoading: false,
-          conversationId: serverConversationId,
-          currentThread: updatedThread,
-          threads: state.threads.map((thread) =>
-            thread.id === state.currentThread?.id ? updatedThread : thread
-          ),
-        };
-      });
+        },
+        // onComplete callback
+        () => {
+          console.log("Stream completed");
+        }
+      );
 
       // Refresh conversation list after sending message
       if (window.refreshConversationList) {
@@ -283,28 +481,27 @@ export const useChatStore = create((set, get) => ({
 
       // Fallback to simulated response if API call fails
       setTimeout(() => {
-        // Generate a UUID for the fallback AI message
-        const fallbackAiMessageId = crypto.randomUUID
-          ? crypto.randomUUID()
-          : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
-              /[xy]/g,
-              function (c) {
-                const r = (Math.random() * 16) | 0;
-                const v = c == "x" ? r : (r & 0x3) | 0x8;
-                return v.toString(16);
-              }
-            );
-
+        const fallbackAiMessageId = generateUUID();
         const aiMessage = {
           id: fallbackAiMessageId,
           content: "I'm a demo AI assistant. Your message was: " + content,
           role: "assistant",
           timestamp: new Date(),
+          sources: [],
+          tool_used: null,
+          has_attachments: false,
+          file_attachments: [],
+          isPending: false,
         };
 
         set((state) => ({
-          messages: [...state.messages, aiMessage],
+          messages: state.messages.map((msg) =>
+            msg.id === pendingMessageId ? aiMessage : msg
+          ),
           isLoading: false,
+          isStreaming: false,
+          pendingMessage: null,
+          currentTool: null,
         }));
       }, 1000);
     }

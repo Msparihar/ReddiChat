@@ -10,6 +10,9 @@ from app.core.config import settings
 from typing import List, Optional
 import uuid
 from app.core.logger import get_logger
+from fastapi.responses import StreamingResponse
+import json
+from typing import Dict, Any, AsyncGenerator
 
 # Set up logging
 logger = get_logger(__name__)
@@ -83,6 +86,85 @@ async def chat_with_files(
     except Exception as e:
         logger.error(f"❌ Unexpected error in chat endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing chat message: {str(e)}")
+
+
+@router.post("/stream")
+async def chat_stream(
+    message: str = Form(...),
+    conversation_id: Optional[str] = Form(None),
+    files: List[UploadFile] = File(default=[]),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    """
+    Process a chat message with optional file attachments and stream the agent's response via SSE
+
+    Args:
+        message: The text message content
+        conversation_id: Optional conversation ID
+        files: List of uploaded files (images, audio, video, PDFs)
+        db: Database session dependency
+        user: Current authenticated user
+
+    Returns:
+        StreamingResponse: SSE stream of response chunks, tools, and final data
+    """
+    logger.info(f"🔵 Streaming chat request: user={user}, files={len(files)}, conv_id={conversation_id}")
+
+    try:
+        # Validate number of files
+        if len(files) > settings.MAX_FILES_PER_MESSAGE:
+            logger.warning(f"⚠️  Too many files: {len(files)} > {settings.MAX_FILES_PER_MESSAGE}")
+            raise HTTPException(
+                status_code=400, detail=f"Maximum {settings.MAX_FILES_PER_MESSAGE} files allowed per message"
+            )
+
+        # Parse conversation_id if provided
+        parsed_conversation_id = None
+        if conversation_id:
+            try:
+                parsed_conversation_id = uuid.UUID(conversation_id)
+                logger.debug(f"📝 Using existing conversation: {parsed_conversation_id}")
+            except ValueError:
+                logger.error(f"❌ Invalid conversation ID format: {conversation_id}")
+                raise HTTPException(status_code=400, detail="Invalid conversation ID format")
+
+        # Log file details
+        if files:
+            file_info = [f"{f.filename}({f.content_type})" for f in files]
+            logger.info(f"📁 Processing files: {file_info}")
+
+        # Use multimodal chat service
+        logger.debug("🚀 Starting streaming chat processing...")
+        chat_service = get_chat_service_multimodal(db, user)
+
+        async def event_stream() -> AsyncGenerator[str, None]:
+            async for event in chat_service.process_chat_message_with_files_stream(
+                message=message, files=files, conversation_id=parsed_conversation_id
+            ):
+                # Yield SSE formatted event
+                yield f"data: {json.dumps(event)}\n\n"
+
+            # End of stream
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Cache-Control",
+            },
+        )
+
+    except HTTPException as e:
+        logger.warning(f"⚠️  HTTP error in stream endpoint: {e.status_code} - {e.detail}")
+        raise
+    except Exception as e:
+        logger.error(f"❌ Unexpected error in stream endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing streaming chat: {str(e)}")
 
 
 @router.post("/text-only", response_model=ChatResponse)

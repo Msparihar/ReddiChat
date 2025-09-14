@@ -15,12 +15,15 @@ class ChatService:
         self.db = db
         self.user = user
 
-    def get_or_create_conversation(self, conversation_id: Optional[uuid.UUID] = None) -> Conversation:
+    def get_or_create_conversation(
+        self, conversation_id: Optional[uuid.UUID] = None, initial_title: Optional[str] = None
+    ) -> Conversation:
         """
         Get an existing conversation or create a new one
 
         Args:
             conversation_id: Optional conversation ID
+            initial_title: Optional title for new conversations (defaults to "New Chat")
 
         Returns:
             Conversation: The conversation object
@@ -35,9 +38,10 @@ class ChatService:
                 logger.debug(f"📝 Found existing conversation: {conversation_id}")
                 return conversation
 
-        # Create a new conversation
+        # Create a new conversation with provided title or default
         logger.debug("🆕 Creating new conversation")
-        conversation_data = ConversationCreate(title="New Chat")
+        title = initial_title if initial_title else "New Chat"
+        conversation_data = ConversationCreate(title=title)
         db_conversation = Conversation(**conversation_data.model_dump(), user_id=self.user.id)
         self.db.add(db_conversation)
         self.db.commit()
@@ -102,8 +106,9 @@ class ChatService:
         """
         logger.info(f"💬 Processing message: '{chat_request.message[:50]}...'")
 
-        # Get or create conversation
-        conversation = self.get_or_create_conversation(chat_request.conversation_id)
+        # Get or create conversation with initial title from first message
+        initial_title = chat_request.message[:50] + "..." if len(chat_request.message) > 50 else chat_request.message
+        conversation = self.get_or_create_conversation(chat_request.conversation_id, initial_title)
 
         # Save user message
         user_message = self.save_message(conversation.id, chat_request.message, MessageRole.USER)

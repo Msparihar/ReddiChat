@@ -7,9 +7,10 @@ import RedditSource from './RedditSource'
 import MarkdownRenderer from './MarkdownRenderer'
 import FileAttachment from './FileAttachment'
 import FilePreviewModal from './FilePreviewModal'
+import RetryButton from './RetryButton'
 
 const MessageList = () => {
-  const { messages, isLoading } = useChatStore()
+  const { messages, isLoading, isStreaming, currentTool } = useChatStore()
   const { colors, isDark } = useTheme()
   const messagesEndRef = useRef(null)
   const [previewFile, setPreviewFile] = useState(null)
@@ -84,10 +85,22 @@ const MessageList = () => {
               </div>
             ) : (
               // AI message - ChatGPT style (no bubble)
-              <div className={cn("px-4 py-6", colors.primary)}>
+              <div className={cn("px-4 py-6", colors.primary, message.isError && "bg-red-50 border-l-4 border-red-400")}>
                 <div className="max-w-3xl mx-auto">
                   <div className="flex-1 min-w-0">
                     <MarkdownRenderer content={message.content} />
+
+                    {/* Show retry button for failed messages */}
+                    {message.isError && <RetryButton message={message} />}
+
+                    {/* Show typing indicator for streaming messages */}
+                    {message.isPending && (
+                      <div className="inline-flex items-center gap-1 mt-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    )}
 
                     <div className={cn("flex items-center gap-4 mt-4 text-xs", colors.textMuted)}>
                       <span>
@@ -99,6 +112,11 @@ const MessageList = () => {
                       {message.tool_used && (
                         <span className="text-blue-500">
                           • Used {message.tool_used === 'search_reddit' ? 'Reddit Search' : message.tool_used}
+                        </span>
+                      )}
+                      {message.isError && (
+                        <span className="text-red-500">
+                          • Error occurred
                         </span>
                       )}
                     </div>
@@ -138,14 +156,30 @@ const MessageList = () => {
           </div>
         ))}
 
-        {/* Loading Message */}
-        {isLoading && (
+        {/* Loading Message - only show when not streaming */}
+        {isLoading && !isStreaming && (
           <div className="px-4 py-6">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '0ms' }}></div>
                 <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '150ms' }}></div>
                 <div className="w-2 h-2 rounded-full bg-gray-400/60 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tool Usage Indicator */}
+        {isStreaming && currentTool && (
+          <div className="px-4 py-3">
+            <div className="max-w-3xl mx-auto">
+              <div className={cn("flex items-center gap-2 text-sm", colors.textMuted)}>
+                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <span>
+                  {currentTool === 'search_reddit' ? 'Searching Reddit...' :
+                   currentTool === 'web_search' ? 'Searching the web...' :
+                   `Using ${currentTool}...`}
+                </span>
               </div>
             </div>
           </div>
