@@ -76,6 +76,9 @@ class Settings(BaseSettings):
     SENDER_EMAIL_PASSWORD: Optional[str] = os.getenv("SENDER_EMAIL_PASSWORD")
     NOTIFICATION_EMAIL: str = os.getenv("NOTIFICATION_EMAIL", "manishsparihar2020@gmail.com")
 
+    EMAIL: Optional[str] = os.getenv("EMAIL")
+    EMAIL_PASSWORD: Optional[str] = os.getenv("EMAIL_PASSWORD")
+
     class Config:
         case_sensitive = True
         env_file = ".env"
