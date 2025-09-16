@@ -25,6 +25,8 @@ default_origins = [
     "http://localhost:8080",
     "http://localhost:3000",
     "https://reddichat-frontend-267146955755.us-east1.run.app",
+    "https://chat.manishsingh.tech",
+    "https://www.chat.manishsingh.tech",
 ]
 
 # Add CORS middleware with specific origins for production
