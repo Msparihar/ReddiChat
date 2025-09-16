@@ -174,9 +174,6 @@ export const useChatStore = create((set, get) => ({
 
   // Load conversation from server with all messages
   loadConversation: async (conversationId) => {
-    const { token } = useAuthStore.getState();
-    if (!token) return;
-
     try {
       set({ isLoading: true });
 
@@ -187,8 +184,8 @@ export const useChatStore = create((set, get) => ({
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
+          credentials: "include",
         }
       );
 
@@ -355,10 +352,9 @@ export const useChatStore = create((set, get) => ({
       // Make streaming API call to backend
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/stream`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: {},
         body: formData,
+        credentials: "include",
       });
 
       if (!response.ok) {

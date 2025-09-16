@@ -9,7 +9,7 @@ import { format } from 'date-fns'
 import { cn } from '../../lib/utils'
 
 const ConversationHistory = () => {
-  const { token } = useAuthStore()
+  const { isAuthenticated } = useAuthStore()
   const { isSidebarOpen } = useUIStore()
   const { colors, isDark } = useTheme()
   const { loadConversation, currentThread, syncThreadsWithAPI, deleteThread, initializeConversation } = useChatStore()
@@ -26,12 +26,12 @@ const ConversationHistory = () => {
   // Fetch conversation history
   useEffect(() => {
     const fetchConversations = async () => {
-      if (!token) return
+      if (!isAuthenticated) return
 
       try {
         setLoading(true)
         setError(null)
-        const data = await AuthService.getConversationHistory(token, page, 10)
+        const data = await AuthService.getConversationHistory(page, 10)
         setConversations(data.conversations)
         setTotalPages(data.pagination.pages)
 
@@ -46,7 +46,7 @@ const ConversationHistory = () => {
     }
 
     fetchConversations()
-  }, [token, page])
+  }, [isAuthenticated, page])
 
   // Handle conversation selection
   const handleSelectConversation = async (conversation) => {
@@ -83,19 +83,12 @@ const ConversationHistory = () => {
       return
     }
 
-    if (!token) {
-      console.error('Cannot delete conversation: No authentication token')
-      setError('Cannot delete conversation: Not authenticated')
-      setShowDeleteConfirm(null)
-      return
-    }
-
     try {
       setDeletingConversation(conversationId)
       console.log(`Attempting to delete conversation: ${conversationId}`)
 
       // Call the API to delete the conversation
-      const result = await AuthService.deleteConversation(token, conversationId)
+      const result = await AuthService.deleteConversation(conversationId)
       console.log('Delete API response:', result)
 
       // Update local state - remove from conversations list
@@ -153,10 +146,10 @@ const ConversationHistory = () => {
 
   // Refresh conversation list
   const refreshConversations = async () => {
-    if (!token) return
+    if (!isAuthenticated) return
 
     try {
-      const data = await AuthService.getConversationHistory(token, page, 10)
+      const data = await AuthService.getConversationHistory(page, 10)
       setConversations(data.conversations)
       setTotalPages(data.pagination.pages)
 
@@ -175,7 +168,7 @@ const ConversationHistory = () => {
     return () => {
       delete window.refreshConversationList
     }
-  }, [token, page])
+  }, [isAuthenticated, page])
 
   // Keyboard navigation
   useEffect(() => {

@@ -266,19 +266,33 @@ async def oauth_callback(
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         session_token = auth_service.create_access_token(data={"sub": str(user.id)}, expires_delta=access_token_expires)
 
-        # Set secure cookie with session token
+        # Set secure cookie with session token and redirect to /chat
         # For localhost development, don't require secure (HTTPS)
-        is_localhost = "localhost" in frontend_origin
+        parsed = urlparse(frontend_origin)
+        host = parsed.hostname or "localhost"
+        is_localhost = host in ("localhost", "127.0.0.1")
+        cookie_domain = None if is_localhost else ".manishsingh.tech"
+        same_site = "lax" if is_localhost else "none"
+        secure = not is_localhost
 
         logger.info(f"OAuth callback successful for user: {user.email}")
-        logger.info(f"Setting cookie - is_localhost: {is_localhost}, secure: {not is_localhost}")
-        logger.info(f"Session token length: {len(session_token)}, starts with: {session_token[:20]}...")
-        logger.info(f"Cookie settings - secure: {not is_localhost}, samesite: {'lax' if is_localhost else 'none'}")
+        logger.info(f"Cookie settings - domain: {cookie_domain}, secure: {secure}, samesite: {same_site}")
 
-        # Send token in URL for now (works universally)
-        redirect_url = f"{frontend_origin}?access_token={session_token}"
-        logger.info(f"Redirecting with token in URL to: {frontend_origin}?access_token=...")
-        return RedirectResponse(url=redirect_url)
+        # Redirect to chat page on frontend
+        redirect_url = f"{frontend_origin}/chat"
+        redirect_response = RedirectResponse(url=redirect_url, status_code=303)
+        redirect_response.set_cookie(
+            key="session",
+            value=session_token,
+            max_age=int(access_token_expires.total_seconds()),
+            expires=int(access_token_expires.total_seconds()),
+            path="/",
+            domain=cookie_domain,
+            secure=secure,
+            httponly=True,
+            samesite=same_site,
+        )
+        return redirect_response
     except HTTPException:
         # Re-raise HTTP exceptions
         raise
@@ -352,16 +366,22 @@ async def logout(request: Request, response: Response):
     """
     Logout the current user
     """
-    # Clear the session cookie
-    # For localhost development, don't require secure (HTTPS)
-    is_localhost = "localhost" in (settings.FRONTEND_URL or "localhost")
+    # Clear the session cookie (mirror the same attributes used when setting)
+    frontend_origin = request.headers.get("origin") or settings.FRONTEND_URL or "http://localhost:5173"
+    parsed = urlparse(frontend_origin)
+    host = parsed.hostname or "localhost"
+    is_localhost = host in ("localhost", "127.0.0.1")
+    cookie_domain = None if is_localhost else ".manishsingh.tech"
+    same_site = "lax" if is_localhost else "none"
+    secure = not is_localhost
+
     response.delete_cookie(
         key="session",
         path="/",
-        secure=not is_localhost,
+        domain=cookie_domain,
+        secure=secure,
         httponly=True,
-        samesite="lax" if is_localhost else "none",
-        domain="localhost" if is_localhost else None,
+        samesite=same_site,
     )
 
     # In a real implementation, you would also invalidate the token on the server side
