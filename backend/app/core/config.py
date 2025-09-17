@@ -82,7 +82,7 @@ class Settings(BaseSettings):
     USER: Optional[str] = os.getenv("USER")
     PASSWORD: Optional[str] = os.getenv("PASSWORD")
     HOST: Optional[str] = os.getenv("HOST")
-    PORT: Optional[str] = os.getenv("PORT")
+    DB_PORT: Optional[str] = os.getenv("DB_PORT")
     DBNAME: Optional[str] = os.getenv("DBNAME")
 
     class Config:

@@ -2,20 +2,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
-
 import urllib.parse
 
-USER = "postgres.frulheyezwzijrejiflr"
-PASSWORD = "manish_sparihar2909"  # if it had @ or /, it must be encoded
-HOST = "aws-0-ap-south-1.pooler.supabase.com"
-PORT = "5432"
-DBNAME = "postgres"
 
 # URL-encode user & password
-USER_ENC = urllib.parse.quote_plus(USER)
-PASSWORD_ENC = urllib.parse.quote_plus(PASSWORD)
+USER_ENC = urllib.parse.quote_plus(settings.USER)
+PASSWORD_ENC = urllib.parse.quote_plus(settings.PASSWORD)
 
-DATABASE_URL = f"postgresql://{USER_ENC}:{PASSWORD_ENC}@{HOST}:{PORT}/{DBNAME}"
+DATABASE_URL = f"postgresql://{USER_ENC}:{PASSWORD_ENC}@{settings.HOST}:{settings.DB_PORT}/{settings.DBNAME}"
 
 engine = create_engine(
     DATABASE_URL,
