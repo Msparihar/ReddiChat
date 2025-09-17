@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 import os
 from dotenv import load_dotenv
@@ -78,6 +78,12 @@ class Settings(BaseSettings):
 
     EMAIL: Optional[str] = os.getenv("EMAIL")
     EMAIL_PASSWORD: Optional[str] = os.getenv("EMAIL_PASSWORD")
+
+    USER: Optional[str] = os.getenv("USER")
+    PASSWORD: Optional[str] = os.getenv("PASSWORD")
+    HOST: Optional[str] = os.getenv("HOST")
+    PORT: Optional[str] = os.getenv("PORT")
+    DBNAME: Optional[str] = os.getenv("DBNAME")
 
     class Config:
         case_sensitive = True

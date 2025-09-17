@@ -1,16 +1,22 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
+from app.core.config import settings
 
-# Load environment variables
-load_dotenv()
+import urllib.parse
 
-# Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./redidchat.db")
+USER = "postgres.frulheyezwzijrejiflr"
+PASSWORD = "manish_sparihar2909"  # if it had @ or /, it must be encoded
+HOST = "aws-0-ap-south-1.pooler.supabase.com"
+PORT = "5432"
+DBNAME = "postgres"
 
-# Create the SQLAlchemy engine
+# URL-encode user & password
+USER_ENC = urllib.parse.quote_plus(USER)
+PASSWORD_ENC = urllib.parse.quote_plus(PASSWORD)
+
+DATABASE_URL = f"postgresql://{USER_ENC}:{PASSWORD_ENC}@{HOST}:{PORT}/{DBNAME}"
+
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
