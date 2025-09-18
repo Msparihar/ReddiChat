@@ -1,6 +1,6 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "https://reddichat-backend-267146955755.us-east1.run.app";
+  "https://api.manishsingh.tech";
 
 class AuthService {
   // Get current user info (cookie-based)
