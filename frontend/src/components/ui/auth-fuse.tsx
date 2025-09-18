@@ -183,7 +183,7 @@ PasswordInput.displayName = "PasswordInput";
 function SignInForm() {
   const handleGoogleLogin = () => {
     // Get the API base URL from environment or use default
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.manishsingh.tech';
 
     // Redirect to Google OAuth endpoint
     window.location.href = `${API_BASE_URL}/api/v1/auth/login/google`;

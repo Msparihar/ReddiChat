@@ -9,8 +9,8 @@ const Login = () => {
   // Handle Google OAuth login
   const handleGoogleLogin = () => {
     console.log('Google login button clicked!')
-    // Use localhost for local development
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+    // Use environment variable or fallback to production URL
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.manishsingh.tech'
     console.log('API Base URL:', apiBaseUrl)
     console.log('Redirecting to:', `${apiBaseUrl}/api/v1/auth/login/google`)
     window.location.href = `${apiBaseUrl}/api/v1/auth/login/google`
@@ -18,8 +18,8 @@ const Login = () => {
 
   // Handle GitHub OAuth login
   const handleGithubLogin = () => {
-    // Use localhost for local development
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+    // Use environment variable or fallback to production URL
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.manishsingh.tech'
     window.location.href = `${apiBaseUrl}/api/v1/auth/login/github`
   }
 
