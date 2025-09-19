@@ -13,7 +13,9 @@ DATABASE_URL = f"postgresql://{USER_ENC}:{PASSWORD_ENC}@{settings.HOST}:{setting
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=2,
 )
 
 # Create a configured "Session" class
