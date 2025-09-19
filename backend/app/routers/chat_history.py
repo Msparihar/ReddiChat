@@ -124,6 +124,10 @@ async def get_conversation_detail(
             .first()
         )
 
+        # Sort messages by timestamp to ensure correct chronological order
+        if conversation and conversation.messages:
+            conversation.messages.sort(key=lambda msg: msg.timestamp)
+
         if not conversation:
             logger.warning(f"Conversation {conversation_id} not found or does not belong to user {user.id}")
             raise HTTPException(status_code=404, detail="Conversation not found or does not belong to user")

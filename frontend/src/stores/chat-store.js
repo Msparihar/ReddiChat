@@ -195,8 +195,8 @@ export const useChatStore = create((set, get) => ({
       const conversationData = await response.json();
 
       // Transform messages to match frontend expectations
-      const transformedMessages = (conversationData.messages || []).map(
-        (msg) => ({
+      const transformedMessages = (conversationData.messages || [])
+        .map((msg) => ({
           id: msg.id,
           content: msg.content,
           role: msg.role,
@@ -206,8 +206,8 @@ export const useChatStore = create((set, get) => ({
           tool_used: msg.tool_used || null,
           has_attachments: msg.has_attachments || false,
           file_attachments: msg.file_attachments || [],
-        })
-      );
+        }))
+        .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp to ensure correct chronological order
 
       // Create thread object from server data
       const thread = {
