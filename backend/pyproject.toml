@@ -3,7 +3,10 @@ name = "backend"
 version = "0.1.0"
 description = "ReddiChat Backend - Chat APIs with FastAPI, SQLAlchemy, and LangGraph"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
+
+[project.scripts]
+app = "app.main:app"
 dependencies = [
     "fastapi[all]>=0.116.1",
     "sqlalchemy>=2.0.0",
@@ -26,4 +29,5 @@ dependencies = [
     "requests>=2.32.5",
     "duckduckgo-search>=8.1.1",
     "langchain-community>=0.3.29",
+    "locust>=2.40.5",
 ]

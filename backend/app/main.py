@@ -29,6 +29,15 @@ default_origins = [
     "https://www.chat.manishsingh.tech",
 ]
 
+# Add Vercel deployment URLs dynamically
+vercel_url = os.getenv("VERCEL_URL")
+if vercel_url:
+    default_origins.append(f"https://{vercel_url}")
+# Add custom Vercel production domain if set
+vercel_production_url = os.getenv("VERCEL_PRODUCTION_URL")
+if vercel_production_url:
+    default_origins.append(f"https://{vercel_production_url}")
+
 # Add CORS middleware with specific origins for production
 app.add_middleware(
     CORSMiddleware,
