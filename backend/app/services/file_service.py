@@ -10,9 +10,8 @@ from app.services.s3_service import get_s3_service, S3Service
 import logging
 import hashlib
 import uuid
-from typing import List, Dict, Optional, Tuple
+from typing import List, Optional, Tuple
 import io
-import mimetypes
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +103,20 @@ class FileProcessingService:
     async def process_image_metadata(self, image_bytes: bytes) -> dict:
         """Extract metadata from image"""
         try:
+            # Check if image bytes are valid
+            if not image_bytes:
+                logger.warning("Empty image bytes provided")
+                return {}
+
+            # Try to open the image to verify it's valid
             image = Image.open(io.BytesIO(image_bytes))
-            return {"width": image.width, "height": image.height, "format": image.format, "mode": image.mode}
+            image.verify()  # Verify the image is valid
+
+            # Reopen for metadata extraction (verify() consumes the image)
+            image = Image.open(io.BytesIO(image_bytes))
+            metadata = {"width": image.width, "height": image.height, "format": image.format, "mode": image.mode}
+            logger.debug(f"Image metadata extracted: {metadata}")
+            return metadata
         except Exception as e:
             logger.warning(f"Image metadata extraction failed: {str(e)}")
             return {}
@@ -120,57 +131,78 @@ class FileProcessingService:
         Returns:
             dict: Processed file data
         """
-        # Validate file
-        is_valid, error_msg = self.validate_file(file)
-        if not is_valid:
-            raise HTTPException(status_code=400, detail=error_msg)
+        try:
+            logger.debug(f"Starting file processing: {file.filename} ({file.content_type})")
 
-        # Read file content
-        content = await file.read()
-        content_hash = self.calculate_checksum(content)
+            # Validate file
+            is_valid, error_msg = self.validate_file(file)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error_msg)
 
-        # Check for duplicate
-        existing_file = await self.check_duplicate_file(content_hash)
-        if existing_file:
-            logger.info(f"Using existing file: {existing_file.id}")
-            return {
-                "id": existing_file.id,
+            # Read file content
+            logger.debug(f"Reading file content: {file.filename}")
+            try:
+                content = await file.read()
+                logger.debug(f"File read completed: {file.filename}, {len(content)} bytes")
+            except Exception as read_error:
+                logger.error(f"Error reading file {file.filename}: {str(read_error)}")
+                raise
+
+            content_hash = self.calculate_checksum(content)
+            logger.debug(f"File checksum calculated: {file.filename}, checksum: {content_hash[:8]}...")
+
+            # Check for duplicate
+            logger.debug(f"Checking for duplicate file: {file.filename}")
+            existing_file = await self.check_duplicate_file(content_hash)
+            if existing_file:
+                logger.info(f"Using existing file: {existing_file.id}")
+                return {
+                    "id": existing_file.id,
+                    "binary_data": content,
+                    "mime_type": existing_file.mime_type,
+                    "filename": existing_file.original_filename,
+                    "type": existing_file.file_type,
+                    "size": existing_file.file_size,
+                    "checksum": existing_file.checksum,
+                    "is_duplicate": True,
+                }
+
+            # Determine file type
+            logger.debug(f"Determining file type: {file.filename}")
+            file_type = self.determine_file_type(file.content_type)
+            logger.debug(f"Determined file type: {file.filename} -> {file_type.value}")
+
+            # Process based on file type
+            logger.debug(f"Processing file data: {file.filename}")
+            processed_data = {
                 "binary_data": content,
-                "mime_type": existing_file.mime_type,
-                "filename": existing_file.original_filename,
-                "type": existing_file.file_type,
-                "size": existing_file.file_size,
-                "checksum": existing_file.checksum,
-                "is_duplicate": True,
+                "mime_type": file.content_type,
+                "filename": file.filename,
+                "type": file_type.value,
+                "size": len(content),
+                "checksum": content_hash,
+                "is_duplicate": False,
             }
 
-        # Determine file type
-        file_type = self.determine_file_type(file.content_type)
+            if file_type == FileType.IMAGE:
+                # Extract image metadata
+                logger.debug(f"Processing image metadata: {file.filename}")
+                metadata = await self.process_image_metadata(content)
+                processed_data["file_metadata"] = metadata
 
-        # Process based on file type
-        processed_data = {
-            "binary_data": content,
-            "mime_type": file.content_type,
-            "filename": file.filename,
-            "type": file_type.value,
-            "size": len(content),
-            "checksum": content_hash,
-            "is_duplicate": False,
-        }
+            elif file_type == FileType.PDF:
+                # Extract text content
+                logger.debug(f"Extracting PDF content: {file.filename}")
+                extracted_text = await self.extract_pdf_content(content)
+                processed_data["extracted_content"] = extracted_text
 
-        if file_type == FileType.IMAGE:
-            # Extract image metadata
-            metadata = await self.process_image_metadata(content)
-            processed_data["file_metadata"] = metadata
+            # For audio/video, we'll pass binary data directly to LLM
+            logger.debug(f"File processing completed: {file.filename}")
+            return processed_data
 
-        elif file_type == FileType.PDF:
-            # Extract text content
-            extracted_text = await self.extract_pdf_content(content)
-            processed_data["extracted_content"] = extracted_text
-
-        # For audio/video, we'll pass binary data directly to LLM
-
-        return processed_data
+        except Exception as e:
+            logger.error(f"Error processing uploaded file {file.filename}: {str(e)}", exc_info=True)
+            raise
 
     def create_multimodal_content(self, text: str, files: List[dict]) -> List[dict]:
         """
@@ -189,10 +221,10 @@ class FileProcessingService:
             file_type = file_data["type"]
 
             if file_type == "image":
-                # Image content for Gemini
+                # Image content for Gemini - use the format expected by LangChain Google Generative AI
                 base64_data = base64.b64encode(file_data["binary_data"]).decode("utf-8")
                 content.append(
-                    {"type": "image_url", "image_url": f"data:{file_data['mime_type']};base64,{base64_data}"}
+                    {"type": "image_url", "image_url": {"url": f"data:{file_data['mime_type']};base64,{base64_data}"}}
                 )
 
             elif file_type in ["audio", "video"]:

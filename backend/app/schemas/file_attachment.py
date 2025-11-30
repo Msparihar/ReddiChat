@@ -92,3 +92,10 @@ class FileMetadata(BaseModel):
     mime_type: str
     created_at: datetime
     file_url: Optional[str] = None  # Pre-signed S3 URL for file access
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if v else None,
+            uuid.UUID: lambda v: str(v) if v else None,
+        }

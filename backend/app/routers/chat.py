@@ -7,15 +7,29 @@ from app.services.chat_service_multimodal import get_chat_service_multimodal
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.core.config import settings
-from typing import List, Optional
+from typing import List, Optional, AsyncGenerator
 import uuid
 from app.core.logger import get_logger
 from fastapi.responses import StreamingResponse
 import json
-from typing import Dict, Any, AsyncGenerator
+from datetime import datetime
+import io
+from starlette.datastructures import UploadFile as StarletteUploadFile
 
 # Set up logging
 logger = get_logger(__name__)
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle UUID and datetime objects"""
+
+    def default(self, obj):
+        if isinstance(obj, uuid.UUID):
+            return str(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
 
 router = APIRouter(
     prefix="/chat",
@@ -72,9 +86,24 @@ async def chat_with_files(
 
         # Use multimodal chat service
         logger.debug("🚀 Starting chat processing...")
+
+        # Read file contents immediately to prevent "I/O operation on closed file" error
+        # This is necessary because FastAPI may close the temporary file before async processing completes
+        processed_files = []
+        for file in files:
+            if file.filename:  # Only process files with filenames
+                # Read file content immediately
+                content = await file.read()
+
+                # Create a file-like object with the content in memory
+                file_copy = StarletteUploadFile(
+                    filename=file.filename, file=io.BytesIO(content), headers=file.headers, size=len(content)
+                )
+                processed_files.append(file_copy)
+
         chat_service = get_chat_service_multimodal(db, user)
         response = await chat_service.process_chat_message_with_files(
-            message=message, files=files, conversation_id=parsed_conversation_id
+            message=message, files=processed_files, conversation_id=parsed_conversation_id
         )
 
         logger.info(f"✅ Chat completed: conv_id={response.conversation_id}, tool={response.tool_used}")
@@ -134,19 +163,51 @@ async def chat_stream(
             file_info = [f"{f.filename}({f.content_type})" for f in files]
             logger.info(f"📁 Processing files: {file_info}")
 
+        # Read file contents immediately to prevent "I/O operation on closed file" error
+        # This is necessary because FastAPI may close the temporary file before async processing completes
+        processed_files = []
+        for file in files:
+            if file.filename:  # Only process files with filenames
+                # Read file content immediately
+                content = await file.read()
+
+                # Create a file-like object with the content in memory
+                file_copy = StarletteUploadFile(
+                    filename=file.filename, file=io.BytesIO(content), headers=file.headers, size=len(content)
+                )
+                processed_files.append(file_copy)
+
         # Use multimodal chat service
         logger.debug("🚀 Starting streaming chat processing...")
         chat_service = get_chat_service_multimodal(db, user)
 
         async def event_stream() -> AsyncGenerator[str, None]:
-            async for event in chat_service.process_chat_message_with_files_stream(
-                message=message, files=files, conversation_id=parsed_conversation_id
-            ):
-                # Yield SSE formatted event
-                yield f"data: {json.dumps(event)}\n\n"
+            logger.debug("Starting event stream")
+            try:
+                async for event in chat_service.process_chat_message_with_files_stream(
+                    message=message, files=processed_files, conversation_id=parsed_conversation_id
+                ):
+                    # Yield SSE formatted event
+                    logger.debug(f"Yielding event: {event.get('type', 'unknown')}")
+                    # Convert Pydantic models to dictionaries for JSON serialization
+                    serializable_event = {}
+                    for key, value in event.items():
+                        if hasattr(value, "model_dump"):
+                            # Pydantic model - convert to dict
+                            serializable_event[key] = value.model_dump()
+                        elif isinstance(value, list) and value and hasattr(value[0], "model_dump"):
+                            # List of Pydantic models - convert each to dict
+                            serializable_event[key] = [item.model_dump() for item in value]
+                        else:
+                            serializable_event[key] = value
+                    yield f"data: {json.dumps(serializable_event, cls=CustomJSONEncoder)}\n\n"
 
-            # End of stream
-            yield "data: [DONE]\n\n"
+                # End of stream
+                logger.debug("Stream completed")
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                logger.error(f"Error in event stream: {str(e)}", exc_info=True)
+                yield f"data: {json.dumps({'type': 'error', 'content': str(e)}, cls=CustomJSONEncoder)}\n\n"
 
         return StreamingResponse(
             event_stream(),

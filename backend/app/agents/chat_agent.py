@@ -1,12 +1,13 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage
-from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import create_react_agent
 from app.core.config import settings
 from app.tools.reddit_tool import search_reddit
+from app.tools.web_search_tool import web_search
 from app.agents.system_prompt import SYSTEM_PROMPT
 from app.core.logger import get_logger
 from app.schemas.chat import RedditSource
+from typing import AsyncGenerator
 import json
 
 logger = get_logger(__name__)
@@ -32,7 +33,7 @@ except Exception as e:
     raise RuntimeError(f"Failed to initialize Gemini LLM: {str(e)}")
 
 
-tools = [search_reddit]
+tools = [search_reddit, web_search]
 
 # Create agent with tools
 app = create_react_agent(llm, tools)
@@ -173,10 +174,6 @@ def get_chat_response_multimodal(message: dict, chat_history: list = None) -> di
         return {"content": "Error processing multimodal content. Please try again.", "sources": [], "tool_used": None}
 
 
-from typing import AsyncGenerator
-import asyncio
-
-
 async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, None]:
     """
     Get a streaming response from the chat agent with events for SSE
@@ -199,6 +196,14 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
             if msg["role"] == "user":
                 if isinstance(msg["content"], list):
                     logger.debug(f"📸 Message {i}: multimodal content")
+                    # Log multimodal content details for debugging
+                    for j, part in enumerate(msg["content"]):
+                        if isinstance(part, dict) and part.get("type") == "image_url":
+                            logger.debug(f" Part {j}: image_url (length: {len(part.get('image_url', ''))})")
+                        elif isinstance(part, dict) and part.get("type") == "text":
+                            logger.debug(f"  Part {j}: text ({part.get('text', '')[:50]}...)")
+                        else:
+                            logger.debug(f"  Part {j}: {type(part)}")
                     langgraph_messages.append(HumanMessage(content=msg["content"]))
                 else:
                     logger.debug(f"💬 Message {i}: text-only")
@@ -229,7 +234,7 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
         response_contents = []
 
         # Log the input to the agent
-        logger.info(f"🚀 Starting agent stream with input: {langgraph_messages}")
+        logger.info(f"🚀 Starting agent stream with input: {len(langgraph_messages)} messages")
 
         async for event in app.astream_events(
             {"messages": langgraph_messages},
@@ -239,15 +244,15 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
             event_name = event.get("name", "unknown")
 
             # Log all events for debugging
-            logger.info(f"🔍 Event: {event_kind} from {event_name}")
+            logger.debug(f"🔍 Event: {event_kind} from {event_name}")
             if event.get("data"):
-                logger.info(f"   Data keys: {list(event['data'].keys())}")
+                logger.debug(f"   Data keys: {list(event['data'].keys())}")
 
             # Only process events from the main agent, LLM, or tools
             if event_name not in ["agent", "llm", "unknown", "search_reddit"] and not event_kind.startswith(
                 "on_chat_model"
             ):
-                logger.info(f"⏭️ Skipping event from {event_name}")
+                logger.debug(f"⏭️ Skipping event from {event_name}")
                 continue
 
             if event_kind == "on_chat_model_start":
@@ -259,7 +264,7 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
                 if delta:
                     content_parts.append(delta)
                     current_llm_content += delta
-                    logger.info(f"📝 Stream chunk: '{delta}' (current: {len(current_llm_content)} chars)")
+                    logger.debug(f"📝 Stream chunk: '{delta}' (current: {len(current_llm_content)} chars)")
                     yield {"type": "content", "delta": delta}
             elif event_kind == "on_chat_model_end":
                 response_contents.append(current_llm_content)
@@ -267,7 +272,7 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
             elif event_kind == "on_tool_start":
                 tool_used = event["name"]
                 logger.info(f"🛠️ Tool started: {tool_used}")
-                logger.info(f"🔍 Tool name check: '{tool_used}' == 'search_reddit'? {tool_used == 'search_reddit'}")
+                logger.debug(f"🔍 Tool name check: '{tool_used}' == 'search_reddit'? {tool_used == 'search_reddit'}")
                 yield {"type": "tool_start", "tool": tool_used}
             elif event_kind == "on_tool_end":
                 output = event["data"]["output"]
@@ -283,14 +288,14 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
                             posts = output_data.get("posts", [])
                             logger.info(f"📊 Found {len(posts)} Reddit posts")
                             tool_results.extend(posts)
-                            logger.info(f"📈 Total tool results now: {len(tool_results)}")
+                            logger.debug(f"📈 Total tool results now: {len(tool_results)}")
                         except (json.JSONDecodeError, AttributeError) as e:
                             logger.error(f"❌ Error parsing tool output: {e}")
                             logger.error(f"   Output content: {output.content}")
                     else:
                         logger.error(f"❌ Tool output has no content attribute: {type(output)}")
                 else:
-                    logger.info(f"⚠️ Tool {tool_used} is not search_reddit, skipping source extraction")
+                    logger.debug(f"⚠️ Tool {tool_used} is not search_reddit, skipping source extraction")
 
                 logger.info(f"✅ Tool ended: {len(tool_results)} results")
                 yield {"type": "tool_end", "output": str(output)}
@@ -305,7 +310,7 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
 
         for i, post in enumerate(tool_results):
             try:
-                logger.info(f"📝 Processing post {i}: {post.get('title', 'No title')[:50]}...")
+                logger.debug(f"📝 Processing post {i}: {post.get('title', 'No title')[:50]}...")
                 reddit_source = RedditSource(
                     title=post.get("title", ""),
                     text=post.get("text", ""),  # Changed from "selftext" to "text"
@@ -318,7 +323,7 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
                     permalink=post.get("permalink", ""),
                 )
                 reddit_sources.append(reddit_source)
-                logger.info(f"✅ Created RedditSource: {reddit_source.title[:30]}...")
+                logger.debug(f"✅ Created RedditSource: {reddit_source.title[:30]}...")
             except Exception as e:
                 logger.error(f"❌ Error processing Reddit source in stream: {e}")
                 logger.error(f"   Post data: {post}")
@@ -340,7 +345,7 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
         logger.info(f"✅ Streaming chat completed: tool={tool_used}, sources={len(tool_results)}")
 
     except Exception as e:
-        logger.error(f"❌ Streaming chat agent error: {str(e)}")
+        logger.error(f"❌ Streaming chat agent error: {str(e)}", exc_info=True)
         yield {
             "type": "error",
             "content": "Error processing chat. Please try again.",

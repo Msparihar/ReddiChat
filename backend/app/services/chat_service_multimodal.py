@@ -9,7 +9,7 @@ from app.services.file_service import FileProcessingService
 from app.services.s3_service import get_s3_service
 import uuid
 from typing import List, Optional, Dict, Any, AsyncGenerator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class ChatServiceMultimodal:
         Determine if file binary data should be included in chat history
         Strategy: Include files from recent messages within context window
         """
-        cutoff_time = datetime.utcnow() - timedelta(hours=1)  # Configurable
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=1)  # Configurable
         return message.timestamp > cutoff_time
 
     async def build_multimodal_content_from_message(self, message: Message) -> List[Dict[str, Any]]:
@@ -90,7 +90,10 @@ class ChatServiceMultimodal:
 
                         base64_data = base64.b64encode(file_data["binary_data"]).decode("utf-8")
                         content.append(
-                            {"type": "image_url", "image_url": f"data:{file_attachment.mime_type};base64,{base64_data}"}
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{file_attachment.mime_type};base64,{base64_data}"},
+                            }
                         )
                     elif file_attachment.file_type in ["audio", "video"]:
                         import base64
@@ -360,18 +363,24 @@ class ChatServiceMultimodal:
 
             for file in files:
                 # Process file for LLM consumption
+                logger.debug(f"Processing uploaded file: {file.filename}")
                 file_data = await self.file_service.process_uploaded_file(file)
                 processed_files.append(file_data)
+                logger.debug(f"File processing completed: {file.filename}")
 
                 # Store file in S3 (if not duplicate)
                 if not file_data.get("is_duplicate", False):
+                    logger.debug(f"Storing file in S3: {file.filename}")
                     stored_file = await self.file_service.store_file_in_s3(file_data)
                     stored_files.append(stored_file)
+                    logger.debug(f"File stored in S3: {file.filename}")
                 else:
                     # Find existing file record
+                    logger.debug(f"Using existing file record: {file.filename}")
                     existing_file = self.db.query(FileAttachment).filter(FileAttachment.id == file_data["id"]).first()
                     if existing_file:
                         stored_files.append(existing_file)
+                        logger.debug(f"Existing file record added: {file.filename}")
 
             # Save user message with attachments early
             user_message = self.save_message_with_attachments(conversation.id, message, MessageRole.USER, stored_files)
