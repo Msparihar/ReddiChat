@@ -4,6 +4,13 @@
   "framework": null,
   "builds": [
     {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxDuration": 30
+      }
+    },
+    {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
@@ -24,11 +31,5 @@
       "src": "/(.*)",
       "dest": "/frontend/dist/index.html"
     }
-  ],
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "python3.12",
-      "maxDuration": 30
-    }
-  }
+  ]
 }
