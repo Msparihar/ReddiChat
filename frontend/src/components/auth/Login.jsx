@@ -9,8 +9,7 @@ const Login = () => {
   // Handle Google OAuth login
   const handleGoogleLogin = () => {
     console.log('Google login button clicked!')
-    // Use environment variable or fallback to production URL
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.manishsingh.tech'
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
     console.log('API Base URL:', apiBaseUrl)
     console.log('Redirecting to:', `${apiBaseUrl}/api/v1/auth/login/google`)
     window.location.href = `${apiBaseUrl}/api/v1/auth/login/google`
@@ -18,8 +17,7 @@ const Login = () => {
 
   // Handle GitHub OAuth login
   const handleGithubLogin = () => {
-    // Use environment variable or fallback to production URL
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.manishsingh.tech'
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
     window.location.href = `${apiBaseUrl}/api/v1/auth/login/github`
   }
 

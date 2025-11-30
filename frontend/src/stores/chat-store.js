@@ -9,8 +9,7 @@ import {
   validateSSEEvent,
 } from "../lib/streaming";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://api.manishsingh.tech";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export const useChatStore = create((set, get) => ({
   threads: [],

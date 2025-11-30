@@ -5,10 +5,15 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: "0.0.0.0", // Allow external connections (required for Docker)
-    port: 8080, // Use Cloud Run's PORT or default to 8080
-    // Allow any host for development and Cloud Run
+    host: "0.0.0.0",
+    port: 8080,
     allowedHosts: "all",
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: "dist",
