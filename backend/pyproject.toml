@@ -5,8 +5,6 @@ description = "ReddiChat Backend - Chat APIs with FastAPI, SQLAlchemy, and LangG
 readme = "README.md"
 requires-python = ">=3.12"
 
-[project.scripts]
-app = "app.main:app"
 dependencies = [
     "fastapi[all]>=0.116.1",
     "sqlalchemy>=2.0.0",

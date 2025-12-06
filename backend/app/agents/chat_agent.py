@@ -249,7 +249,7 @@ async def get_chat_response_stream(all_messages: list) -> AsyncGenerator[dict, N
                 logger.debug(f"   Data keys: {list(event['data'].keys())}")
 
             # Only process events from the main agent, LLM, or tools
-            if event_name not in ["agent", "llm", "unknown", "search_reddit"] and not event_kind.startswith(
+            if event_name not in ["agent", "llm", "unknown", "search_reddit", "web_search"] and not event_kind.startswith(
                 "on_chat_model"
             ):
                 logger.debug(f"⏭️ Skipping event from {event_name}")

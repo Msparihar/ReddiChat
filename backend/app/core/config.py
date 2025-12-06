@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     # Database Configuration
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./redidchat.db")
+    POSTGRES_URL: Optional[str] = os.getenv("POSTGRES_URL")
+    DATABASE_URL: str = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or "sqlite:///./reddichat.db"
 
     # Gemini Configuration
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")

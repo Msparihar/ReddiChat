@@ -5,11 +5,15 @@ from app.core.config import settings
 import urllib.parse
 
 
-# URL-encode user & password
-USER_ENC = urllib.parse.quote_plus(settings.USER)
-PASSWORD_ENC = urllib.parse.quote_plus(settings.PASSWORD)
-
-DATABASE_URL = f"postgresql://{USER_ENC}:{PASSWORD_ENC}@{settings.HOST}:{settings.DB_PORT}/{settings.DBNAME}"
+# Use DATABASE_URL directly if available, otherwise build from components
+if settings.DATABASE_URL and not settings.DATABASE_URL.startswith("sqlite"):
+    DATABASE_URL = settings.DATABASE_URL
+elif settings.USER and settings.PASSWORD and settings.HOST and settings.DB_PORT and settings.DBNAME:
+    USER_ENC = urllib.parse.quote_plus(settings.USER)
+    PASSWORD_ENC = urllib.parse.quote_plus(settings.PASSWORD)
+    DATABASE_URL = f"postgresql://{USER_ENC}:{PASSWORD_ENC}@{settings.HOST}:{settings.DB_PORT}/{settings.DBNAME}"
+else:
+    DATABASE_URL = settings.DATABASE_URL
 
 engine = create_engine(
     DATABASE_URL,
