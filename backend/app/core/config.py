@@ -28,16 +28,16 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: Optional[str] = os.getenv("GOOGLE_CLIENT_SECRET")
     GOOGLE_REDIRECT_URI: Optional[str] = os.getenv(
-        "GOOGLE_REDIRECT_URI", "https://reddichat-backend-267146955755.us-east1.run.app/api/v1/auth/callback/google"
+        "GOOGLE_REDIRECT_URI", "https://reddichat-api.manishsingh.tech/api/v1/auth/callback/google"
     )
     GITHUB_CLIENT_ID: Optional[str] = os.getenv("GITHUB_CLIENT_ID")
     GITHUB_CLIENT_SECRET: Optional[str] = os.getenv("GITHUB_CLIENT_SECRET")
     GITHUB_REDIRECT_URI: Optional[str] = os.getenv(
-        "GITHUB_REDIRECT_URI", "https://reddichat-backend-267146955755.us-east1.run.app/api/v1/auth/callback/github"
+        "GITHUB_REDIRECT_URI", "https://reddichat-api.manishsingh.tech/api/v1/auth/callback/github"
     )
 
     # Frontend and CORS Configuration
-    FRONTEND_URL: Optional[str] = os.getenv("FRONTEND_URL", "https://reddichat-frontend-267146955755.us-east1.run.app")
+    FRONTEND_URL: Optional[str] = os.getenv("FRONTEND_URL", "https://reddichat.manishsingh.tech")
 
     # Server Configuration
     PORT: int = int(os.getenv("PORT", 8000))
