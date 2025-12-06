@@ -10,9 +10,9 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock* ./
 
-RUN uv sync
-
 COPY . /app
+
+RUN uv sync --frozen
 
 EXPOSE 8000
 
