@@ -24,6 +24,7 @@ default_origins = [
     "http://localhost:5173",
     "http://localhost:8080",
     "http://localhost:3000",
+    "https://reddichat.manishsingh.tech",
     "https://reddichat-frontend-267146955755.us-east1.run.app",
     "https://chat.manishsingh.tech",
     "https://www.chat.manishsingh.tech",
