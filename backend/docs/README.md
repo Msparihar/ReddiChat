@@ -32,6 +32,10 @@ Authorization: Bearer <your_jwt_token>
 
 - [Chat History API](./chat-history-api.md) - View and manage conversation history
 
+### Tools
+
+- [Web Search Tool (DuckDuckGo)](./web-search-tool.md) - Using DuckDuckGo for web searches
+
 ## Error Handling
 
 All endpoints return standard HTTP status codes and JSON error responses:
