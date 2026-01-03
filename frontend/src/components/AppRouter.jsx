@@ -6,6 +6,7 @@ import AppLayout from './layout/AppLayout';
 import ChatArea from './chat/ChatArea';
 import Login from './auth/Login';
 import SignInPage from './auth/SignInPage';
+import RedditUserPage from './RedditUserPage';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
@@ -24,6 +25,9 @@ const AppRouter = () => {
 
         {/* Alternative sign-in page */}
         <Route path="/signin" element={<SignInPage />} />
+
+        {/* Reddit user history lookup - public */}
+        <Route path="/u/:username?" element={<RedditUserPage />} />
 
         {/* Protected chat route */}
         <Route

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import chat_router, auth_router, chat_history_router, file_test_router
+from app.routers import chat_router, auth_router, chat_history_router, file_test_router, reddit_router
 from app.core.database import engine, Base
 from app.core.logger import get_logger
 import os
@@ -56,6 +56,7 @@ app.include_router(chat_router, prefix=settings.API_V1_STR)
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(chat_history_router, prefix=settings.API_V1_STR)
 app.include_router(file_test_router, prefix=settings.API_V1_STR)
+app.include_router(reddit_router, prefix=settings.API_V1_STR)
 logger.info("🛤️  API routes registered")
 
 
