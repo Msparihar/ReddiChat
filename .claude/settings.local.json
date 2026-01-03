@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run lint:*)",
+      "Bash(uv run python:*)"
+    ]
+  }
+}
