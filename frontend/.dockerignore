@@ -1,21 +1,42 @@
+# Dependencies
 node_modules
-.git
-.gitignore
-README.md
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.DS_Store
-.vscode
-.idea
-*.swp
-*.swo
-*~
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+out
 dist
 build
 
+# Testing
+coverage
+
+# Environment files (will be passed at runtime)
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Git
+.git
+.gitignore
+
+# Misc
+README.md
+*.md

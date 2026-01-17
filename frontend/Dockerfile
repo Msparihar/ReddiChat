@@ -1,61 +1,55 @@
-# Build stage
-FROM node:18-alpine AS builder
-
+# ---- Base ----
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Build argument for API URL
-ARG VITE_API_BASE_URL=https://reddichat-api.manishsingh.tech
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies (including devDependencies for build)
+# ---- Dependencies ----
+FROM base AS deps
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy source code
+# ---- Builder ----
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Build arguments for environment variables needed at build time
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 
 # Build the application
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
+# ---- Runner ----
+FROM base AS runner
+WORKDIR /app
 
-# Copy built assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Create nginx configuration
-RUN echo 'events { worker_connections 1024; } \
-http { \
-    include /etc/nginx/mime.types; \
-    default_type application/octet-stream; \
-    gzip on; \
-    gzip_vary on; \
-    gzip_min_length 1024; \
-    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json; \
-    server { \
-        listen 8080; \
-        server_name _; \
-        root /usr/share/nginx/html; \
-        index index.html; \
-        location / { \
-            try_files $uri $uri/ /index.html; \
-        } \
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ { \
-            expires 1y; \
-            add_header Cache-Control "public, immutable"; \
-        } \
-        location /health { \
-            access_log off; \
-            return 200 "healthy\n"; \
-            add_header Content-Type text/plain; \
-        } \
-    } \
-}' > /etc/nginx/nginx.conf
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Expose port 8080 (Cloud Run default)
-EXPOSE 8080
+# Copy public assets
+COPY --from=builder /app/public ./public
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Set correct permissions for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Copy standalone build output
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+CMD ["node", "server.js"]
