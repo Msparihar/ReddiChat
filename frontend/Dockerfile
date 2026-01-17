@@ -20,6 +20,9 @@ COPY . .
 ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 
+# Dummy secret for build time (Better Auth checks for it, actual secret passed at runtime)
+ENV BETTER_AUTH_SECRET="build-time-placeholder-secret-not-used-in-production"
+
 # Build the application
 RUN bun run build
 
