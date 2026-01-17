@@ -14,6 +14,7 @@ import {
   Search,
   MessageSquare,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { useSession } from "@/lib/auth/client";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -24,6 +25,7 @@ export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [userLookupInput, setUserLookupInput] = useState("");
   const [showUserLookup, setShowUserLookup] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
   const { data: session } = useSession();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -33,9 +35,8 @@ export default function LandingPage() {
 
   const handleUserLookup = () => {
     if (userLookupInput.trim()) {
+      setIsLookingUp(true);
       router.push(`/u/${userLookupInput.trim()}`);
-      setShowUserLookup(false);
-      setUserLookupInput("");
     }
   };
 
@@ -474,11 +475,20 @@ export default function LandingPage() {
 
               <button
                 type="submit"
-                disabled={!userLookupInput.trim()}
+                disabled={!userLookupInput.trim() || isLookingUp}
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Search size={18} />
-                Look Up User
+                {isLookingUp ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <Search size={18} />
+                    Look Up User
+                  </>
+                )}
               </button>
             </form>
           </div>
