@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createAuthMiddleware } from "better-auth/api";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { sendLoginEmail } from "@/lib/email";
@@ -35,18 +36,15 @@ export const auth = betterAuth({
     "https://reddichat.manishsingh.tech",
   ],
   hooks: {
-    after: [
-      {
-        matcher: (ctx) => ctx.path === "/sign-in/social",
-        handler: async (ctx) => {
-          const user = ctx.context?.user;
-          if (user?.email && user?.name) {
-            // Send email in background, don't block the response
-            sendLoginEmail(user.email, user.name).catch(console.error);
-          }
-        },
-      },
-    ],
+    after: createAuthMiddleware(async (ctx) => {
+      // Send login notification email after social sign-in
+      if (ctx.path.startsWith("/sign-in/social") || ctx.path.startsWith("/callback")) {
+        const newSession = ctx.context.newSession;
+        if (newSession?.user?.email && newSession?.user?.name) {
+          sendLoginEmail(newSession.user.email, newSession.user.name).catch(console.error);
+        }
+      }
+    }),
   },
 });
 
