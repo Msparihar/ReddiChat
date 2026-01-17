@@ -1,12 +1,14 @@
 # ---- Base ----
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
+# Install bun
+RUN npm install -g bun
 WORKDIR /app
 
 # ---- Dependencies ----
 FROM base AS deps
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json bun.lockb* ./
+RUN bun install --frozen-lockfile
 
 # ---- Builder ----
 FROM base AS builder
@@ -19,7 +21,7 @@ ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 
 # Build the application
-RUN npm run build
+RUN bun run build
 
 # ---- Runner ----
 FROM base AS runner
