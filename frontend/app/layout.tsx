@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     "Chat with an AI that can search Reddit, analyze images, and provide intelligent responses powered by real community insights.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/reddit-favicon.svg",
   },
 };
 
