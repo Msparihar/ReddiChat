@@ -41,7 +41,8 @@
     "zod": "^3.24.1",
     "@aws-sdk/client-s3": "^3.721.0",
     "@aws-sdk/s3-request-presigner": "^3.721.0",
-    "duck-duck-scrape": "^2.2.6"
+    "duck-duck-scrape": "^2.2.6",
+    "nodemailer": "^6.9.16"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
@@ -56,6 +57,7 @@
     "autoprefixer": "^10.4.20",
     "@tailwindcss/typography": "^0.5.16",
     "eslint": "^9.18.0",
-    "eslint-config-next": "^15.1.6"
+    "eslint-config-next": "^15.1.6",
+    "@types/nodemailer": "^6.4.17"
   }
 }
