@@ -1,226 +1,150 @@
-# 🤖 ReddiChat - AI Chat with Reddit Integration
+# ReddiChat - AI Chat with Reddit Integration
 
-![ReddiChat Interface](assets/home.png)
+> **[Try ReddiChat Live](https://reddichat.manishsingh.tech/)**
 
-> **[Try ReddiChat Live](https://reddichat-frontend-267146955755.us-east1.run.app/)** 🚀
+ReddiChat is an intelligent chatbot that combines AI with real-time Reddit insights. Get answers enriched with current discussions, opinions, and trends from Reddit communities.
 
-ReddiChat is an intelligent chatbot that combines the power of AI with real-time Reddit insights. Get answers enriched with current discussions, opinions, and trends from Reddit communities.
+## Features
 
-## ✨ Features
-
-### 🎯 **AI-Powered Conversations**
-
-- Chat with advanced AI (Gemini 2.5 Flash) for intelligent responses
+### AI-Powered Conversations
+- Chat with Gemini 2.5 Flash for intelligent responses
 - Context-aware conversations with memory across sessions
 - Natural language understanding for complex queries
 
-### 🔍 **Reddit Integration**
-
-- **Real-time Reddit Search**: Get current discussions and opinions from Reddit
-- **Source Attribution**: See exactly which Reddit posts inform the AI's responses
+### Reddit Integration
+- **Real-time Reddit Search**: Get current discussions and opinions
+- **Source Attribution**: See which Reddit posts inform the AI's responses
 - **Community Insights**: Access diverse perspectives from various subreddits
-- **Smart Tool Selection**: AI automatically decides when to search Reddit for relevant information
+- **Reddit User Lookup**: View any user's posts, comments, and media at `/u/username`
 
-### 💬 **Rich Chat Experience**
-
-- **Persistent Chat History**: All your conversations are saved and searchable
-- **Modern Interface**: Clean, responsive design inspired by leading chat platforms
+### Rich Chat Experience
+- **Persistent Chat History**: All conversations saved and searchable
+- **Modern Interface**: Clean, responsive design
 - **Source Display**: Interactive cards showing Reddit posts with links, scores, and metadata
-- **Mobile-Friendly**: Works seamlessly on desktop and mobile devices
+- **File Attachments**: Upload images and files to chat
 
-### 🔐 **Secure Authentication**
+### Secure Authentication
+- Google and GitHub OAuth integration
+- Session management with Better Auth
+- User-specific chat history
 
-- Google OAuth integration for secure login
-- Session management with proper security
-- User-specific chat history and settings
+## Tech Stack
 
-## 🚀 Quick Start
+### Frontend (Next.js 15)
+- **Next.js 15** with App Router
+- **React 19** with Server Components
+- **Tailwind CSS** for styling
+- **Zustand** for client state
+- **React Query** for server state
+- **Better Auth** for authentication
+- **Drizzle ORM** for database
 
-### 1. **Access ReddiChat**
-
-Visit **[https://reddichat-frontend-267146955755.us-east1.run.app/](https://reddichat-frontend-267146955755.us-east1.run.app/)** in your browser.
-
-### 2. **Sign In**
-
-Click **"Sign in with Google"** to authenticate and start chatting.
-
-### 3. **Start Chatting**
-
-Ask questions like:
-
-- *"What are people saying about the new iPhone on Reddit?"*
-- *"Reddit discussions about machine learning trends"*
-- *"What do developers think about Python vs JavaScript?"*
-
-## 🎯 How It Works
-
-### Intelligent Tool Selection
-
-ReddiChat's AI automatically determines when to search Reddit based on your questions:
-
-```
-You: "What's the latest buzz about AI on Reddit?"
-🤖 AI: *Automatically searches Reddit for recent AI discussions*
-📱 Shows Reddit posts with sources, scores, and links
-```
-
-### Rich Source Attribution
-
-Every Reddit-sourced response includes:
-
-- **Post Title & Content**: Direct excerpts from Reddit posts
-- **Community Context**: Which subreddit the discussion is from
-- **Engagement Metrics**: Upvotes and comment counts
-- **Direct Links**: Click to view the full Reddit thread
-- **Author Information**: See who posted the content
-
-### Persistent Memory
-
-- **Chat History**: Access all your previous conversations
-- **Context Retention**: AI remembers context within conversations
-- **Cross-Session Memory**: Pick up where you left off
-
-## 🛠️ Technology Stack
-
-### Frontend
-
-- **React** with modern hooks and state management
-- **Tailwind CSS** for responsive, beautiful UI
-- **Zustand** for efficient state management
-- **Vite** for fast development and building
-
-### Backend
-
-- **FastAPI** for high-performance API endpoints
-- **LangGraph** for intelligent agent orchestration
-- **SQLAlchemy** with SQLite for data persistence
-- **Google Gemini** for advanced AI capabilities
-- **PRAW** (Python Reddit API Wrapper) for Reddit integration
+### Backend (FastAPI)
+- **FastAPI** for API endpoints
+- **LangGraph** for AI agent orchestration
+- **Google Gemini** for AI capabilities
+- **PRAW** for Reddit API
+- **PostgreSQL** for data persistence
 
 ### Infrastructure
+- **Dokploy** on Hostinger VPS
+- **Docker** containerization
+- **Traefik** reverse proxy
+- **Cloudflare** for DNS and CDN
 
-- **Google Cloud Run** for scalable deployment
-- **Docker** containerization for consistency
-- **OAuth 2.0** for secure authentication
-
-## 📱 Use Cases
-
-### 🎓 **Research & Learning**
-
-- Get current opinions on academic topics
-- Find community discussions about learning resources
-- Discover trending technologies and tools
-
-### 💼 **Market Research**
-
-- Understand public sentiment about products/services
-- Track discussions about industry trends
-- Gather user feedback and opinions
-
-### 🎮 **Entertainment & Hobbies**
-
-- Find community reactions to movies, games, books
-- Discover new hobbies through Reddit communities
-- Get recommendations from enthusiast communities
-
-### 📊 **Decision Making**
-
-- Gather diverse perspectives before making decisions
-- See real user experiences with products/services
-- Access community wisdom on various topics
-
-## 🔒 Privacy & Security
-
-- **Secure Authentication**: Google OAuth 2.0 implementation
-- **Data Protection**: User conversations are private and secure
-- **No Reddit Account Required**: Access Reddit insights without needing a Reddit account
-- **Transparent Sources**: All Reddit sources are clearly attributed and linked
-
-## 🚀 Getting Started for Developers
+## Quick Start
 
 ### Prerequisites
+- Node.js 20+ / Bun
+- Python 3.13+
+- PostgreSQL
+- Docker (optional)
 
-- **Python 3.13+** for backend
-- **Node.js 18+** for frontend
-- **Docker** (optional, for containerized deployment)
+### Frontend Setup
 
-### Local Development
+```bash
+cd frontend
+bun install
+cp .env.example .env
+# Edit .env with your credentials
+bun run dev
+```
 
-1. **Clone the repository**
+### Backend Setup
 
-   ```bash
-   git clone <repository-url>
-   cd ReddiChat
-   ```
+```bash
+cd backend
+uv install
+cp env.example .env
+# Edit .env with your credentials
+uv run uvicorn app.main:app --reload
+```
 
-2. **Set up Environment Variables**
+### Environment Variables
 
-   ```bash
-   cd backend
-   cp env.example .env
-   ```
-
-   **Required**: Edit `.env` and add your Google Gemini API key:
-
-   ```env
-   GEMINI_API_KEY=your_actual_api_key_here
-   ```
-
-   > 🔑 **Get your free Gemini API key**: [Google AI Studio](https://makersuite.google.com/app/apikey)
-
-3. **Backend Setup**
-
-   ```bash
-   cd backend
-   pip install uv  # Modern Python package manager
-   uv install
-   uv run uvicorn app.main:app --reload
-   ```
-
-4. **Frontend Setup**
-
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-5. **Optional Configuration**
-   - Set up Google OAuth credentials for authentication
-   - Configure Reddit API access for enhanced search capabilities
+#### Frontend (.env)
+```env
+DATABASE_URL=postgresql://...
+BETTER_AUTH_SECRET=your-secret
+GEMINI_API_KEY=your-key
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+REDDIT_CLIENT_ID=...
+REDDIT_CLIENT_SECRET=...
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_REGION=sfo3
+S3_BUCKET=your-bucket
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+BETTER_AUTH_URL=http://localhost:3000
+```
 
 ### Docker Deployment
 
 ```bash
-docker compose up --build
+cd frontend
+docker build -t reddichat .
+docker run -p 3000:3000 --env-file .env reddichat
 ```
 
-## 📚 API Documentation
+## Project Structure
 
-When running locally, access interactive API documentation at:
+```
+ReddiChat/
+├── frontend/                 # Next.js 15 app
+│   ├── app/                  # App Router pages
+│   │   ├── (auth)/login/     # Login page
+│   │   ├── (chat)/chat/      # Chat interface
+│   │   ├── u/[username]/     # Reddit user lookup
+│   │   └── api/              # API routes
+│   ├── components/           # React components
+│   ├── lib/                  # Utilities
+│   │   ├── auth/             # Better Auth config
+│   │   ├── db/               # Drizzle ORM
+│   │   ├── reddit/           # Reddit API client
+│   │   └── ai/               # AI agent setup
+│   └── stores/               # Zustand stores
+├── backend/                  # FastAPI backend (legacy)
+│   ├── app/
+│   │   ├── agents/           # LangGraph agents
+│   │   ├── routers/          # API routes
+│   │   └── models/           # SQLAlchemy models
+│   └── Dockerfile
+└── docker-compose.yml
+```
 
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
+## API Documentation
 
-## 🤝 Contributing
+Backend API docs available at:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
-We welcome contributions! Areas where you can help:
+## License
 
-- **New AI Tools**: Integrate additional data sources
-- **UI/UX Improvements**: Enhance the chat interface
-- **Performance Optimization**: Improve response times
-- **Feature Requests**: Suggest new capabilities
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🌟 Star This Project
-
-If you find ReddiChat useful, please ⭐ star this repository to show your support!
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Built with ❤️ for the Reddit and AI communities**
-
-🔗 **[Start Chatting Now](https://reddichat-frontend-267146955755.us-east1.run.app/)**
+**[Start Chatting Now](https://reddichat.manishsingh.tech/)**

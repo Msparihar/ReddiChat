@@ -8,14 +8,16 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from "crypto";
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.AWS_REGION || "auto",
+  endpoint: process.env.S3_ENDPOINT,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
 
-const BUCKET_NAME = process.env.S3_BUCKET || "reddichat-files";
+const BUCKET_NAME = process.env.S3_BUCKET || "reddichat-prod";
+const S3_ENDPOINT = process.env.S3_ENDPOINT;
 
 export interface UploadResult {
   filename: string;
@@ -56,7 +58,10 @@ export async function uploadToS3(
     })
   );
 
-  const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+  // For R2, use the endpoint URL; for AWS S3, use the standard format
+  const s3Url = S3_ENDPOINT
+    ? `${S3_ENDPOINT}/${BUCKET_NAME}/${s3Key}`
+    : `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
 
   return {
     filename: `${timestamp}-${randomId}.${extension}`,

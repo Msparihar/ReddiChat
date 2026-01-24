@@ -70,13 +70,13 @@ async def get_user_history(
 
             # Get the appropriate listing based on sort
             if sort == "new":
-                submission_listing = user.submissions.new(limit=limit + 1, params=params if params else None)
+                submission_listing = user.submissions.new(limit=limit + 1, params=params)
             elif sort == "hot":
-                submission_listing = user.submissions.hot(limit=limit + 1, params=params if params else None)
+                submission_listing = user.submissions.hot(limit=limit + 1, params=params)
             elif sort == "top":
-                submission_listing = user.submissions.top(limit=limit + 1, params=params if params else None)
+                submission_listing = user.submissions.top(limit=limit + 1, params=params)
             else:  # controversial
-                submission_listing = user.submissions.controversial(limit=limit + 1, params=params if params else None)
+                submission_listing = user.submissions.controversial(limit=limit + 1, params=params)
 
             for i, submission in enumerate(submission_listing):
                 if i >= limit:
@@ -123,13 +123,13 @@ async def get_user_history(
 
             # Get the appropriate listing based on sort
             if sort == "new":
-                comment_listing = user.comments.new(limit=limit + 1, params=params if params else None)
+                comment_listing = user.comments.new(limit=limit + 1, params=params)
             elif sort == "hot":
-                comment_listing = user.comments.hot(limit=limit + 1, params=params if params else None)
+                comment_listing = user.comments.hot(limit=limit + 1, params=params)
             elif sort == "top":
-                comment_listing = user.comments.top(limit=limit + 1, params=params if params else None)
+                comment_listing = user.comments.top(limit=limit + 1, params=params)
             else:  # controversial
-                comment_listing = user.comments.controversial(limit=limit + 1, params=params if params else None)
+                comment_listing = user.comments.controversial(limit=limit + 1, params=params)
 
             for i, comment in enumerate(comment_listing):
                 if i >= limit:
