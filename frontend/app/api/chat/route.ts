@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { conversations, messages } from "@/lib/db/schema";
-import { CoreMessage } from "ai";
+import { ModelMessage } from "ai";
 import { streamChatResponse, extractSources } from "@/lib/ai/agent";
 import { eq } from "drizzle-orm";
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     // Build messages array for AI
-    const aiMessages: CoreMessage[] = [
+    const aiMessages: ModelMessage[] = [
       {
         role: "user",
         content: message,

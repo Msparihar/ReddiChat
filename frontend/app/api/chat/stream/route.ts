@@ -8,7 +8,7 @@ import {
   fileAttachments,
   messageAttachments,
 } from "@/lib/db/schema";
-import { CoreMessage } from "ai";
+import { ModelMessage } from "ai";
 import { streamChatResponse, extractSources } from "@/lib/ai/agent";
 import { eq, asc } from "drizzle-orm";
 import { uploadToS3, getFileType } from "@/lib/s3";
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       .limit(20);
 
     // Build messages array for AI (filter out empty messages)
-    const aiMessages: CoreMessage[] = history
+    const aiMessages: ModelMessage[] = history
       .slice(0, -1)
       .filter((msg) => msg.content && msg.content.trim() !== "")
       .map((msg) => ({

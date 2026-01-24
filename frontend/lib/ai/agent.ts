@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { streamText, CoreMessage, ToolResultPart, stepCountIs } from "ai";
+import { streamText, ModelMessage, ToolResultPart, stepCountIs } from "ai";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { searchRedditTool } from "./tools/reddit";
 import { webSearchTool } from "./tools/web-search";
@@ -32,7 +32,7 @@ export const tools = {
 export type ToolName = keyof typeof tools;
 
 export interface StreamChatOptions {
-  messages: CoreMessage[];
+  messages: ModelMessage[];
   onToolStart?: (toolName: string) => void;
   onToolEnd?: (toolName: string, result: any) => void;
 }
