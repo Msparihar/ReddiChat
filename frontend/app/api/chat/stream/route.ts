@@ -12,6 +12,18 @@ import { CoreMessage } from "ai";
 import { streamChatResponse, extractSources } from "@/lib/ai/agent";
 import { eq, asc } from "drizzle-orm";
 import { uploadToS3, getFileType } from "@/lib/s3";
+import { appendFileSync } from "fs";
+import { join } from "path";
+
+const LOG_FILE = join(process.cwd(), "chat-stream.log");
+
+function log(message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logLine = data
+    ? `[${timestamp}] ${message}\n${JSON.stringify(data, null, 2)}\n\n`
+    : `[${timestamp}] ${message}\n`;
+  appendFileSync(LOG_FILE, logLine);
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -132,11 +144,14 @@ export async function POST(request: NextRequest) {
       .orderBy(asc(messages.timestamp))
       .limit(20);
 
-    // Build messages array for AI
-    const aiMessages: CoreMessage[] = history.slice(0, -1).map((msg) => ({
-      role: msg.role as "user" | "assistant",
-      content: msg.content,
-    }));
+    // Build messages array for AI (filter out empty messages)
+    const aiMessages: CoreMessage[] = history
+      .slice(0, -1)
+      .filter((msg) => msg.content && msg.content.trim() !== "")
+      .map((msg) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      }));
 
     // Add current message with any image attachments
     const currentMessageContent: any[] = [{ type: "text", text: message }];
@@ -165,9 +180,12 @@ export async function POST(request: NextRequest) {
           let allSources: any[] = [];
           let fullContent = "";
 
+          log("Starting stream with messages", aiMessages);
+
           const result = await streamChatResponse({
             messages: aiMessages,
             onToolStart: (name) => {
+              log(`Tool started: ${name}`);
               toolUsed = name;
               controller.enqueue(
                 encoder.encode(
@@ -175,28 +193,42 @@ export async function POST(request: NextRequest) {
                 )
               );
             },
-            onToolEnd: (name, result) => {
+            onToolEnd: (name, toolResult) => {
+              log(`Tool ended: ${name}`, toolResult);
               controller.enqueue(
                 encoder.encode(
                   createSSEMessage({ type: "tool_end", tool: name })
                 )
               );
-              if (result) {
-                const sources = extractSources([{ toolName: name, result }]);
+              if (toolResult) {
+                const sources = extractSources([{ toolName: name, result: toolResult }]);
                 allSources.push(...sources);
               }
             },
           });
 
           // Stream content chunks
-          for await (const chunk of result.textStream) {
-            fullContent += chunk;
-            controller.enqueue(
-              encoder.encode(
-                createSSEMessage({ type: "content", delta: chunk })
-              )
-            );
+          log("Starting to consume textStream...");
+          let chunkCount = 0;
+          try {
+            for await (const chunk of result.textStream) {
+              chunkCount++;
+              fullContent += chunk;
+              controller.enqueue(
+                encoder.encode(
+                  createSSEMessage({ type: "content", delta: chunk })
+                )
+              );
+            }
+          } catch (streamError: any) {
+            log("Error during stream consumption", { message: streamError.message, stack: streamError.stack });
+            throw streamError;
           }
+
+          // Log completion
+          log("Stream consumption complete");
+
+          log(`Stream finished. Chunks: ${chunkCount}, Content length: ${fullContent.length}`);
 
           // Save assistant message
           const [assistantMessage] = await db
@@ -243,7 +275,7 @@ export async function POST(request: NextRequest) {
 
           controller.close();
         } catch (error: any) {
-          console.error("Stream error:", error);
+          log("Stream error", { message: error.message, stack: error.stack });
           controller.enqueue(
             encoder.encode(
               createSSEMessage({

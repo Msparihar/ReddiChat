@@ -1,11 +1,13 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { search, SafeSearchType } from "duck-duck-scrape";
+import { tavily } from "@tavily/core";
+
+const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
 
 export const webSearchTool = tool({
-  description: `Search the web using DuckDuckGo for current information and news related to the query.
-This tool searches the web for relevant, current information and news articles.`,
-  parameters: z.object({
+  description: `Search the web for current information, news, and articles related to the query.
+This tool searches the web for relevant, up-to-date information using Tavily's AI-optimized search.`,
+  inputSchema: z.object({
     query: z.string().describe("Search term to find relevant web results"),
     num_results: z
       .number()
@@ -16,19 +18,21 @@ This tool searches the web for relevant, current information and news articles.`
   }),
   execute: async ({ query, num_results = 5 }) => {
     try {
-      const searchResults = await search(query, {
-        safeSearch: SafeSearchType.MODERATE,
+      const response = await tavilyClient.search(query, {
+        maxResults: num_results,
+        includeAnswer: true,
       });
 
-      const results = searchResults.results.slice(0, num_results).map((result) => ({
+      const results = response.results.map((result) => ({
         title: result.title,
-        snippet: result.description,
+        snippet: result.content,
         url: result.url,
-        source: result.hostname || new URL(result.url).hostname,
+        score: result.score,
       }));
 
       return {
         query,
+        answer: response.answer,
         results_count: results.length,
         results,
       };

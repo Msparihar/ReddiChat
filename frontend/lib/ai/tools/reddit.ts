@@ -6,7 +6,7 @@ export const searchRedditTool = tool({
   description: `Search Reddit for posts related to the query with optional subreddit filtering.
 This tool searches Reddit for relevant posts and discussions based on your query.
 It's particularly useful for finding recent discussions, opinions, and information from Reddit communities.`,
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("Search term or question to find relevant Reddit posts"),
     subreddits: z
       .array(z.string())
