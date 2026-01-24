@@ -65,6 +65,9 @@ async function redditFetch(endpoint: string): Promise<any> {
 
 // ============ Types ============
 
+export type SortOption = "new" | "hot" | "top" | "controversial";
+export type TimeFilter = "hour" | "day" | "week" | "month" | "year" | "all";
+
 export interface RedditPost {
   title: string;
   text: string;
@@ -329,63 +332,80 @@ function extractMediaFromPost(post: any): MediaItem[] {
   return media;
 }
 
+// ============ Helper: Parse Post Data ============
+
+function parsePostData(post: any): UserPost {
+  const media = extractMediaFromPost(post);
+
+  const validThumbnail =
+    post.thumbnail &&
+    !["self", "default", "nsfw", "spoiler", "image", ""].includes(
+      post.thumbnail
+    ) &&
+    post.thumbnail.startsWith("http");
+
+  const isVideo = post.is_video || false;
+  const videoUrl =
+    post.media?.reddit_video?.fallback_url ||
+    post.secure_media?.reddit_video?.fallback_url;
+
+  return {
+    id: post.id,
+    fullname: post.name, // t3_xxxxx format for pagination
+    title: post.title,
+    selftext:
+      post.selftext?.length > 200
+        ? post.selftext.substring(0, 200) + "..."
+        : post.selftext || "",
+    subreddit: post.subreddit,
+    score: post.score,
+    numComments: post.num_comments,
+    created: new Date(post.created_utc * 1000).toISOString(),
+    permalink: `https://www.reddit.com${post.permalink}`,
+    url: post.url,
+    isNsfw: post.over_18,
+    thumbnail: validThumbnail ? post.thumbnail : undefined,
+    media,
+    isVideo,
+    videoUrl,
+  };
+}
+
 // ============ Get User Posts (Paginated) ============
 
 export async function getUserPosts(
   username: string,
   after?: string,
-  limit: number = 15
-): Promise<PaginatedResponse<UserPost> & { error?: string }> {
+  limit: number = 15,
+  sort: SortOption = "new",
+  time?: TimeFilter
+): Promise<PaginatedResponse<UserPost> & { error?: string; usedSearchFallback?: boolean }> {
   try {
     const params = new URLSearchParams({
       limit: limit.toString(),
-      sort: "new",
+      sort,
     });
     if (after) {
       params.set("after", after);
+    }
+    // Time filter only applies to top and controversial
+    if ((sort === "top" || sort === "controversial") && time) {
+      params.set("t", time);
     }
 
     const response = await redditFetch(
       `/user/${username}/submitted?${params}`
     );
 
-    const posts: UserPost[] = response.data.children.map((child: any) => {
-      const post = child.data;
-      const media = extractMediaFromPost(post);
+    const posts: UserPost[] = response.data.children.map((child: any) =>
+      parsePostData(child.data)
+    );
 
-      const validThumbnail =
-        post.thumbnail &&
-        !["self", "default", "nsfw", "spoiler", "image", ""].includes(
-          post.thumbnail
-        ) &&
-        post.thumbnail.startsWith("http");
-
-      const isVideo = post.is_video || false;
-      const videoUrl =
-        post.media?.reddit_video?.fallback_url ||
-        post.secure_media?.reddit_video?.fallback_url;
-
-      return {
-        id: post.id,
-        fullname: post.name, // t3_xxxxx format for pagination
-        title: post.title,
-        selftext:
-          post.selftext?.length > 200
-            ? post.selftext.substring(0, 200) + "..."
-            : post.selftext || "",
-        subreddit: post.subreddit,
-        score: post.score,
-        numComments: post.num_comments,
-        created: new Date(post.created_utc * 1000).toISOString(),
-        permalink: `https://www.reddit.com${post.permalink}`,
-        url: post.url,
-        isNsfw: post.over_18,
-        thumbnail: validThumbnail ? post.thumbnail : undefined,
-        media,
-        isVideo,
-        videoUrl,
-      };
-    });
+    // If no posts found and no pagination cursor, try author search fallback
+    if (posts.length === 0 && !after) {
+      console.log(`Profile empty for u/${username}, trying author search fallback`);
+      return await searchUserPosts(username, limit, sort, time);
+    }
 
     return {
       items: posts,
@@ -403,20 +423,71 @@ export async function getUserPosts(
   }
 }
 
+// ============ Search User Posts (Fallback for hidden profiles) ============
+
+async function searchUserPosts(
+  username: string,
+  limit: number = 15,
+  sort: SortOption = "new",
+  time?: TimeFilter
+): Promise<PaginatedResponse<UserPost> & { error?: string; usedSearchFallback?: boolean }> {
+  try {
+    const params = new URLSearchParams({
+      q: `author:${username}`,
+      limit: limit.toString(),
+      sort: sort === "controversial" ? "relevance" : sort, // Search doesn't support controversial
+      restrict_sr: "false",
+    });
+    // Time filter for search
+    if (time) {
+      params.set("t", time);
+    }
+
+    const response = await redditFetch(`/r/all/search?${params}`);
+
+    const posts: UserPost[] = response.data.children.map((child: any) =>
+      parsePostData(child.data)
+    );
+
+    console.log(`Found ${posts.length} posts via author search for u/${username}`);
+
+    return {
+      items: posts,
+      after: response.data.after,
+      hasMore: !!response.data.after,
+      usedSearchFallback: true,
+    };
+  } catch (error: any) {
+    console.error("Reddit author search fallback error:", error);
+    return {
+      items: [],
+      after: null,
+      hasMore: false,
+      error: error.message || "Failed to search posts",
+    };
+  }
+}
+
 // ============ Get User Comments (Paginated) ============
 
 export async function getUserComments(
   username: string,
   after?: string,
-  limit: number = 15
+  limit: number = 15,
+  sort: SortOption = "new",
+  time?: TimeFilter
 ): Promise<PaginatedResponse<UserComment> & { error?: string }> {
   try {
     const params = new URLSearchParams({
       limit: limit.toString(),
-      sort: "new",
+      sort,
     });
     if (after) {
       params.set("after", after);
+    }
+    // Time filter only applies to top and controversial
+    if ((sort === "top" || sort === "controversial") && time) {
+      params.set("t", time);
     }
 
     const response = await redditFetch(`/user/${username}/comments?${params}`);

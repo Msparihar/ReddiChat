@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useRef, useCallback } from "react";
+import { use, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -15,10 +15,19 @@ import {
   Grid3X3,
   Loader2,
   Lock,
+  ChevronDown,
+  Filter,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 import { useSession, signIn } from "@/lib/auth/client";
+
+// ============ Filter Types ============
+
+type SortOption = "new" | "hot" | "top" | "controversial";
+type TimeFilter = "hour" | "day" | "week" | "month" | "year" | "all";
 
 // ============ Types ============
 
@@ -83,20 +92,48 @@ async function fetchUserInfo(username: string) {
   return response.json();
 }
 
-async function fetchUserPosts({ username, pageParam }: { username: string; pageParam?: string }) {
-  const url = pageParam
-    ? `/api/reddit/user/${username}/posts?after=${pageParam}`
-    : `/api/reddit/user/${username}/posts`;
-  const response = await fetch(url);
+async function fetchUserPosts({
+  username,
+  pageParam,
+  sort,
+  time,
+}: {
+  username: string;
+  pageParam?: string;
+  sort: SortOption;
+  time?: TimeFilter;
+}) {
+  const params = new URLSearchParams({ sort });
+  if (pageParam) params.set("after", pageParam);
+  if (time && (sort === "top" || sort === "controversial")) {
+    params.set("time", time);
+  }
+  const response = await fetch(`/api/reddit/user/${username}/posts?${params}`, {
+    cache: "no-store",
+  });
   if (!response.ok) throw new Error("Failed to fetch posts");
   return response.json();
 }
 
-async function fetchUserComments({ username, pageParam }: { username: string; pageParam?: string }) {
-  const url = pageParam
-    ? `/api/reddit/user/${username}/comments?after=${pageParam}`
-    : `/api/reddit/user/${username}/comments`;
-  const response = await fetch(url);
+async function fetchUserComments({
+  username,
+  pageParam,
+  sort,
+  time,
+}: {
+  username: string;
+  pageParam?: string;
+  sort: SortOption;
+  time?: TimeFilter;
+}) {
+  const params = new URLSearchParams({ sort });
+  if (pageParam) params.set("after", pageParam);
+  if (time && (sort === "top" || sort === "controversial")) {
+    params.set("time", time);
+  }
+  const response = await fetch(`/api/reddit/user/${username}/comments?${params}`, {
+    cache: "no-store",
+  });
   if (!response.ok) throw new Error("Failed to fetch comments");
   return response.json();
 }
@@ -300,6 +337,165 @@ function LoadingSpinner() {
   );
 }
 
+// ============ Filter Bar Component ============
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "new", label: "New" },
+  { value: "hot", label: "Hot" },
+  { value: "top", label: "Top" },
+  { value: "controversial", label: "Controversial" },
+];
+
+const TIME_OPTIONS: { value: TimeFilter; label: string }[] = [
+  { value: "hour", label: "Past Hour" },
+  { value: "day", label: "Past 24 Hours" },
+  { value: "week", label: "Past Week" },
+  { value: "month", label: "Past Month" },
+  { value: "year", label: "Past Year" },
+  { value: "all", label: "All Time" },
+];
+
+interface FilterBarProps {
+  sort: SortOption;
+  setSort: (sort: SortOption) => void;
+  time: TimeFilter;
+  setTime: (time: TimeFilter) => void;
+  subreddit: string;
+  setSubreddit: (subreddit: string) => void;
+  subreddits: string[];
+  showNsfw: boolean;
+  setShowNsfw: (show: boolean) => void;
+  isDark: boolean;
+}
+
+function FilterBar({
+  sort,
+  setSort,
+  time,
+  setTime,
+  subreddit,
+  setSubreddit,
+  subreddits,
+  showNsfw,
+  setShowNsfw,
+  isDark,
+}: FilterBarProps) {
+  const showTimeFilter = sort === "top" || sort === "controversial";
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl p-3 mb-4 border flex flex-wrap items-center gap-2",
+        isDark ? "bg-gray-900/50 border-gray-800" : "bg-white border-gray-200"
+      )}
+    >
+      <Filter size={16} className={isDark ? "text-gray-500" : "text-gray-400"} />
+
+      {/* Sort Dropdown */}
+      <div className="relative">
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortOption)}
+          className={cn(
+            "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500",
+            isDark
+              ? "bg-gray-800 text-gray-200 border-gray-700"
+              : "bg-gray-100 text-gray-700 border-gray-200"
+          )}
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          size={14}
+          className={cn(
+            "absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none",
+            isDark ? "text-gray-400" : "text-gray-500"
+          )}
+        />
+      </div>
+
+      {/* Time Dropdown - only shown for top/controversial */}
+      {showTimeFilter && (
+        <div className="relative">
+          <select
+            value={time}
+            onChange={(e) => setTime(e.target.value as TimeFilter)}
+            className={cn(
+              "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500",
+              isDark
+                ? "bg-gray-800 text-gray-200 border-gray-700"
+                : "bg-gray-100 text-gray-700 border-gray-200"
+            )}
+          >
+            {TIME_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={14}
+            className={cn(
+              "absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none",
+              isDark ? "text-gray-400" : "text-gray-500"
+            )}
+          />
+        </div>
+      )}
+
+      {/* Subreddit Dropdown */}
+      {subreddits.length > 0 && (
+        <div className="relative">
+          <select
+            value={subreddit}
+            onChange={(e) => setSubreddit(e.target.value)}
+            className={cn(
+              "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500 max-w-[140px]",
+              isDark
+                ? "bg-gray-800 text-gray-200 border-gray-700"
+                : "bg-gray-100 text-gray-700 border-gray-200"
+            )}
+          >
+            <option value="">All Subreddits</option>
+            {subreddits.map((sub) => (
+              <option key={sub} value={sub}>
+                r/{sub}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={14}
+            className={cn(
+              "absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none",
+              isDark ? "text-gray-400" : "text-gray-500"
+            )}
+          />
+        </div>
+      )}
+
+      {/* NSFW Toggle */}
+      <button
+        onClick={() => setShowNsfw(!showNsfw)}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+          showNsfw
+            ? "bg-red-500/20 text-red-400"
+            : isDark
+            ? "bg-gray-800 text-gray-400"
+            : "bg-gray-100 text-gray-500"
+        )}
+      >
+        {showNsfw ? <Eye size={14} /> : <EyeOff size={14} />}
+        NSFW
+      </button>
+    </div>
+  );
+}
+
 function LoginPrompt({ username, isDark }: { username: string; isDark: boolean }) {
   const handleGoogleSignIn = async () => {
     await signIn.social({
@@ -400,13 +596,30 @@ export default function RedditUserPage({
   const { data: session, isPending: sessionLoading } = useSession();
   const isAuthenticated = !!session?.user;
 
+  // Filter state
+  const [sort, setSort] = useState<SortOption>("new");
+  const [time, setTime] = useState<TimeFilter>("all");
+  const [subredditFilter, setSubredditFilter] = useState<string>("");
+  const [showNsfw, setShowNsfw] = useState<boolean>(true);
+
+  // Reset subreddit filter when sort/time changes (new data will be fetched)
+  const handleSortChange = (newSort: SortOption) => {
+    setSort(newSort);
+    setSubredditFilter("");
+  };
+
+  const handleTimeChange = (newTime: TimeFilter) => {
+    setTime(newTime);
+    setSubredditFilter("");
+  };
+
   // User info query
   const { data: userData, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ["reddit-user", resolvedParams.username],
     queryFn: () => fetchUserInfo(resolvedParams.username),
   });
 
-  // Posts infinite query - only fetch when authenticated
+  // Posts infinite query - include sort/time in query key for refetch
   const {
     data: postsData,
     fetchNextPage: fetchMorePosts,
@@ -414,14 +627,15 @@ export default function RedditUserPage({
     isFetchingNextPage: loadingMorePosts,
     isLoading: postsLoading,
   } = useInfiniteQuery({
-    queryKey: ["reddit-user-posts", resolvedParams.username],
-    queryFn: ({ pageParam }) => fetchUserPosts({ username: resolvedParams.username, pageParam }),
+    queryKey: ["reddit-user-posts", resolvedParams.username, sort, time],
+    queryFn: ({ pageParam }) =>
+      fetchUserPosts({ username: resolvedParams.username, pageParam, sort, time }),
     getNextPageParam: (lastPage) => lastPage.after,
     initialPageParam: undefined as string | undefined,
     enabled: isAuthenticated,
   });
 
-  // Comments infinite query - only fetch when authenticated
+  // Comments infinite query - include sort/time in query key for refetch
   const {
     data: commentsData,
     fetchNextPage: fetchMoreComments,
@@ -429,8 +643,9 @@ export default function RedditUserPage({
     isFetchingNextPage: loadingMoreComments,
     isLoading: commentsLoading,
   } = useInfiniteQuery({
-    queryKey: ["reddit-user-comments", resolvedParams.username],
-    queryFn: ({ pageParam }) => fetchUserComments({ username: resolvedParams.username, pageParam }),
+    queryKey: ["reddit-user-comments", resolvedParams.username, sort, time],
+    queryFn: ({ pageParam }) =>
+      fetchUserComments({ username: resolvedParams.username, pageParam, sort, time }),
     getNextPageParam: (lastPage) => lastPage.after,
     initialPageParam: undefined as string | undefined,
     enabled: isAuthenticated && activeTab === "comments",
@@ -439,6 +654,33 @@ export default function RedditUserPage({
   // Flatten paginated data
   const allPosts = postsData?.pages.flatMap((page) => page.items) || [];
   const allComments = commentsData?.pages.flatMap((page) => page.items) || [];
+
+  // Extract unique subreddits from current data
+  const postSubreddits = useMemo(() => {
+    const subs = new Set(allPosts.map((p) => p.subreddit));
+    return Array.from(subs).sort();
+  }, [allPosts]);
+
+  const commentSubreddits = useMemo(() => {
+    const subs = new Set(allComments.map((c) => c.subreddit));
+    return Array.from(subs).sort();
+  }, [allComments]);
+
+  // Client-side filtering (subreddit + NSFW)
+  const filteredPosts = useMemo(() => {
+    return allPosts.filter((post) => {
+      if (subredditFilter && post.subreddit !== subredditFilter) return false;
+      if (!showNsfw && post.isNsfw) return false;
+      return true;
+    });
+  }, [allPosts, subredditFilter, showNsfw]);
+
+  const filteredComments = useMemo(() => {
+    return allComments.filter((comment) => {
+      if (subredditFilter && comment.subreddit !== subredditFilter) return false;
+      return true;
+    });
+  }, [allComments, subredditFilter]);
 
   // Infinite scroll observer
   const handleObserver = useCallback(
@@ -614,12 +856,30 @@ export default function RedditUserPage({
             <LoadingSpinner />
           ) : (
             <>
+              {/* Filter Bar */}
+              <FilterBar
+                sort={sort}
+                setSort={handleSortChange}
+                time={time}
+                setTime={handleTimeChange}
+                subreddit={subredditFilter}
+                setSubreddit={setSubredditFilter}
+                subreddits={activeTab === "comments" ? commentSubreddits : postSubreddits}
+                showNsfw={showNsfw}
+                setShowNsfw={setShowNsfw}
+                isDark={isDark}
+              />
+
               {activeTab === "posts" && (
                 <>
                   {postsLoading ? (
                     <LoadingSpinner />
+                  ) : filteredPosts.length > 0 ? (
+                    filteredPosts.map((post) => <PostCard key={post.id} post={post} isDark={isDark} />)
                   ) : allPosts.length > 0 ? (
-                    allPosts.map((post) => <PostCard key={post.id} post={post} isDark={isDark} />)
+                    <div className={cn("text-center py-12", isDark ? "text-gray-500" : "text-gray-400")}>
+                      No posts match filters
+                    </div>
                   ) : (
                     <div className={cn("text-center py-12", isDark ? "text-gray-500" : "text-gray-400")}>
                       No posts found
@@ -633,8 +893,12 @@ export default function RedditUserPage({
                 <>
                   {commentsLoading ? (
                     <LoadingSpinner />
+                  ) : filteredComments.length > 0 ? (
+                    filteredComments.map((comment) => <CommentCard key={comment.id} comment={comment} isDark={isDark} />)
                   ) : allComments.length > 0 ? (
-                    allComments.map((comment) => <CommentCard key={comment.id} comment={comment} isDark={isDark} />)
+                    <div className={cn("text-center py-12", isDark ? "text-gray-500" : "text-gray-400")}>
+                      No comments match filters
+                    </div>
                   ) : (
                     <div className={cn("text-center py-12", isDark ? "text-gray-500" : "text-gray-400")}>
                       No comments found
@@ -649,7 +913,7 @@ export default function RedditUserPage({
                   {postsLoading ? (
                     <LoadingSpinner />
                   ) : (
-                    <MediaGrid posts={allPosts} isDark={isDark} />
+                    <MediaGrid posts={filteredPosts} isDark={isDark} />
                   )}
                   {loadingMorePosts && <LoadingSpinner />}
                 </>
@@ -661,9 +925,9 @@ export default function RedditUserPage({
           <div ref={loadMoreRef} className="h-4" />
 
           {/* End of content message */}
-          {((activeTab === "posts" && !hasMorePosts && allPosts.length > 0) ||
-            (activeTab === "comments" && !hasMoreComments && allComments.length > 0) ||
-            (activeTab === "media" && !hasMorePosts && allPosts.some((p) => p.media?.length > 0))) && (
+          {((activeTab === "posts" && !hasMorePosts && filteredPosts.length > 0) ||
+            (activeTab === "comments" && !hasMoreComments && filteredComments.length > 0) ||
+            (activeTab === "media" && !hasMorePosts && filteredPosts.some((p) => p.media?.length > 0))) && (
             <div className={cn("text-center py-4 text-sm", isDark ? "text-gray-600" : "text-gray-400")}>
               You've reached the end
             </div>
