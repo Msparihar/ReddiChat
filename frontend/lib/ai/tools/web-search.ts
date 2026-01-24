@@ -2,7 +2,14 @@ import { tool } from "ai";
 import { z } from "zod";
 import { tavily } from "@tavily/core";
 
-const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
+let tavilyClient: ReturnType<typeof tavily> | null = null;
+
+function getTavilyClient() {
+  if (!tavilyClient) {
+    tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
+  }
+  return tavilyClient;
+}
 
 export const webSearchTool = tool({
   description: `Search the web for current information, news, and articles related to the query.
@@ -18,7 +25,7 @@ This tool searches the web for relevant, up-to-date information using Tavily's A
   }),
   execute: async ({ query, num_results = 5 }) => {
     try {
-      const response = await tavilyClient.search(query, {
+      const response = await getTavilyClient().search(query, {
         maxResults: num_results,
         includeAnswer: true,
       });
