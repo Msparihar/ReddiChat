@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Test files
+backend/test*.py
+backend/test*.js
+backend/locustfile.py
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,3 +33,7 @@ dist-ssr
 *.sln
 *.sw?
 /dist
+
+# Misc
+nul
+image.png
