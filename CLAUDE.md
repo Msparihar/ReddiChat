@@ -16,3 +16,4 @@ Reddit-style chat application with social authentication.
 ## Notes
 - Login notifications are sent via Better Auth hooks after social sign-in
 - Backend folder exists but is not in use
+- Pre-push hook runs Docker build to validate before pushing
