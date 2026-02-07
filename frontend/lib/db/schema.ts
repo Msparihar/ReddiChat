@@ -8,6 +8,7 @@ import {
   boolean,
   bigint,
   integer,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -122,6 +123,29 @@ export const messageAttachments = pgTable("message_attachments", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// User searches history table
+export const userSearches = pgTable(
+  "user_searches",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    redditUsername: varchar("reddit_username", { length: 100 }).notNull(),
+    redditAvatar: text("reddit_avatar"),
+    redditKarma: integer("reddit_karma"),
+    searchedAt: timestamp("searched_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("user_searches_user_reddit_idx").on(
+      table.userId,
+      table.redditUsername
+    ),
+  ]
+);
+
 // Relations
 export const conversationsRelations = relations(conversations, ({ many }) => ({
   messages: many(messages),
@@ -158,6 +182,9 @@ export type FileAttachment = typeof fileAttachments.$inferSelect;
 export type NewFileAttachment = typeof fileAttachments.$inferInsert;
 export type MessageAttachment = typeof messageAttachments.$inferSelect;
 export type NewMessageAttachment = typeof messageAttachments.$inferInsert;
+
+export type UserSearch = typeof userSearches.$inferSelect;
+export type NewUserSearch = typeof userSearches.$inferInsert;
 
 export interface RedditSource {
   title: string;

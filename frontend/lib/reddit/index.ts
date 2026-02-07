@@ -250,7 +250,9 @@ export async function getRedditUserInfo(
     const user: RedditUser = {
       name: userData.name,
       id: userData.id,
-      created: new Date(userData.created_utc * 1000).toISOString(),
+      created: userData.created_utc
+        ? new Date(userData.created_utc * 1000).toISOString()
+        : new Date(0).toISOString(),
       linkKarma: userData.link_karma || 0,
       commentKarma: userData.comment_karma || 0,
       totalKarma: (userData.link_karma || 0) + (userData.comment_karma || 0),
@@ -393,9 +395,19 @@ export async function getUserPosts(
       params.set("t", time);
     }
 
-    const response = await redditFetch(
-      `/user/${username}/submitted?${params}`
-    );
+    let response;
+    try {
+      response = await redditFetch(
+        `/user/${username}/submitted?${params}`
+      );
+    } catch (fetchError: any) {
+      // On 403/private profile, try author search fallback (only on first page)
+      if (fetchError.message?.includes("403") && !after) {
+        console.log(`Profile forbidden for u/${username}, trying author search fallback`);
+        return await searchUserPosts(username, limit, sort, time);
+      }
+      throw fetchError;
+    }
 
     const posts: UserPost[] = response.data.children.map((child: any) =>
       parsePostData(child.data)
@@ -490,7 +502,17 @@ export async function getUserComments(
       params.set("t", time);
     }
 
-    const response = await redditFetch(`/user/${username}/comments?${params}`);
+    let response;
+    try {
+      response = await redditFetch(`/user/${username}/comments?${params}`);
+    } catch (fetchError: any) {
+      // On 403/private profile, return empty list (no fallback for comments)
+      if (fetchError.message?.includes("403")) {
+        console.log(`Comments forbidden for u/${username}`);
+        return { items: [], after: null, hasMore: false };
+      }
+      throw fetchError;
+    }
 
     const comments: UserComment[] = response.data.children.map((child: any) => {
       const comment = child.data;

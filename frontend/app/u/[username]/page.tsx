@@ -19,10 +19,13 @@ import {
   Filter,
   EyeOff,
   Eye,
+  Info,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 import { useSession, signIn } from "@/lib/auth/client";
+import { UserSearchAutocomplete } from "@/components/UserSearchAutocomplete";
 
 // ============ Filter Types ============
 
@@ -595,6 +598,7 @@ export default function RedditUserPage({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { data: session, isPending: sessionLoading } = useSession();
   const isAuthenticated = !!session?.user;
+  const router = useRouter();
 
   // Filter state
   const [sort, setSort] = useState<SortOption>("new");
@@ -651,9 +655,25 @@ export default function RedditUserPage({
     enabled: isAuthenticated && activeTab === "comments",
   });
 
+  // Record search in history when user data loads
+  useEffect(() => {
+    if (!isAuthenticated || !userData?.user?.name) return;
+    const user = userData.user as RedditUser;
+    fetch("/api/user-searches", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        redditUsername: user.name,
+        redditAvatar: user.iconImg || null,
+        redditKarma: user.totalKarma || null,
+      }),
+    }).catch(() => {}); // fire-and-forget
+  }, [isAuthenticated, userData?.user?.name]);
+
   // Flatten paginated data
   const allPosts = postsData?.pages.flatMap((page) => page.items) || [];
   const allComments = commentsData?.pages.flatMap((page) => page.items) || [];
+  const usedSearchFallback = postsData?.pages.some((page) => page.usedSearchFallback) ?? false;
 
   // Extract unique subreddits from current data
   const postSubreddits = useMemo(() => {
@@ -755,17 +775,29 @@ export default function RedditUserPage({
       )}
     >
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Back Button */}
-        <Link
-          href="/"
-          className={cn(
-            "inline-flex items-center gap-2 mb-4 hover:text-orange-400 transition-colors text-sm",
-            isDark ? "text-gray-400" : "text-gray-600"
-          )}
-        >
-          <ArrowLeft size={16} />
-          Back to Home
-        </Link>
+        {/* Top Bar */}
+        <div className="flex items-center gap-3 mb-4">
+          <Link
+            href="/"
+            className={cn(
+              "inline-flex items-center gap-2 hover:text-orange-400 transition-colors text-sm flex-shrink-0",
+              isDark ? "text-gray-400" : "text-gray-600"
+            )}
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Link>
+          <div className="flex-1">
+            <UserSearchAutocomplete
+              isDark={isDark}
+              compact
+              placeholder="Search another user..."
+              onSelect={(username) => {
+                router.push(`/u/${username}`);
+              }}
+            />
+          </div>
+        </div>
 
         {/* User Header - Compact */}
         <div
@@ -872,6 +904,21 @@ export default function RedditUserPage({
 
               {activeTab === "posts" && (
                 <>
+                  {usedSearchFallback && !postsLoading && allPosts.length > 0 && (
+                    <div
+                      className={cn(
+                        "flex items-start gap-2.5 px-4 py-3 rounded-lg border text-sm",
+                        isDark
+                          ? "bg-amber-500/10 border-amber-500/20 text-amber-300"
+                          : "bg-amber-50 border-amber-200 text-amber-700"
+                      )}
+                    >
+                      <Info size={16} className="flex-shrink-0 mt-0.5" />
+                      <span>
+                        This user's profile is private. Showing posts found via Reddit search instead — some posts may be missing.
+                      </span>
+                    </div>
+                  )}
                   {postsLoading ? (
                     <LoadingSpinner />
                   ) : filteredPosts.length > 0 ? (

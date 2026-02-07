@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import typography from "@tailwindcss/typography";
 
 const config: Config = {
   content: [
@@ -71,6 +72,10 @@ const config: Config = {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "Consolas", "Monaco", "monospace"],
+        outfit: ["Outfit", "system-ui", "sans-serif"],
+        "dm-sans": ["DM Sans", "system-ui", "sans-serif"],
+        syne: ["Syne", "system-ui", "sans-serif"],
+        jakarta: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
       keyframes: {
         "fade-in": {
@@ -85,15 +90,50 @@ const config: Config = {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
         },
+        spotlight: {
+          "0%": { opacity: "0", transform: "translate(-72%, -62%) scale(0.5)" },
+          "100%": { opacity: "1", transform: "translate(-50%, -40%) scale(1)" },
+        },
+        "meteor-effect": {
+          "0%": { transform: "rotate(215deg) translateX(0)", opacity: "1" },
+          "70%": { opacity: "1" },
+          "100%": { transform: "rotate(215deg) translateX(-500px)", opacity: "0" },
+        },
+        aurora: {
+          from: { backgroundPosition: "50% 50%, 50% 50%" },
+          to: { backgroundPosition: "350% 50%, 350% 50%" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "0.8" },
+        },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(40px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "border-spin": {
+          to: { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 1s ease-out forwards",
         "fade-in-up": "fade-in-up 0.8s ease-out forwards",
         "gradient-x": "gradient-x 3s ease infinite",
+        spotlight: "spotlight 2s ease 0.75s 1 forwards",
+        "meteor-effect": "meteor-effect 5s linear infinite",
+        aurora: "aurora 60s linear infinite",
+        float: "float 3s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
+        "slide-up": "slide-up 0.6s ease-out forwards",
+        "border-spin": "border-spin 3s linear infinite",
       },
     },
   },
-  plugins: [require("@tailwindcss/typography")],
+  plugins: [typography],
 };
 
 export default config;
