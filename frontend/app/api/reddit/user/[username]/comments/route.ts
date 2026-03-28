@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserComments, SortOption, TimeFilter } from "@/lib/reddit";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { redditUsernameSchema } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 const validSorts: SortOption[] = ["new", "hot", "top", "controversial"];
 const validTimes: TimeFilter[] = ["hour", "day", "week", "month", "year", "all"];
@@ -10,6 +13,19 @@ export async function GET(
 ) {
   try {
     const { username } = await params;
+
+    // Validate username
+    const usernameValidation = redditUsernameSchema.safeParse(username);
+    if (!usernameValidation.success) {
+      return NextResponse.json({ error: "Invalid username" }, { status: 400 });
+    }
+
+    // Rate limit by IP or username
+    const rateLimit = checkRateLimit(`reddit:${username}`, RATE_LIMITS.reddit);
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const after = searchParams.get("after") || undefined;
     const limit = parseInt(searchParams.get("limit") || "15", 10);
@@ -27,13 +43,6 @@ export async function GET(
         ? (timeParam as TimeFilter)
         : undefined;
 
-    if (!username) {
-      return NextResponse.json(
-        { error: "Username is required" },
-        { status: 400 }
-      );
-    }
-
     const result = await getUserComments(username, after, limit, sort, time);
 
     if (result.error) {
@@ -45,7 +54,7 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error fetching Reddit user comments:", error);
+    logger.error("Failed to fetch Reddit user comments", { error: (error as Error)?.message });
     return NextResponse.json(
       { error: "Failed to fetch Reddit user comments" },
       { status: 500 }

@@ -8,7 +8,8 @@ import {
   messageAttachments,
   fileAttachments,
 } from "@/lib/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -45,34 +46,45 @@ export async function GET(
       );
     }
 
-    // Get attachments for messages with attachments
-    const messagesWithAttachments = await Promise.all(
-      conversation.messages.map(async (message) => {
-        if (!message.hasAttachments) {
-          return { ...message, file_attachments: [] };
+    // Batch-fetch attachments to avoid N+1 queries
+    const messageIdsWithAttachments = conversation.messages
+      .filter(msg => msg.hasAttachments)
+      .map(msg => msg.id);
+
+    let attachmentsByMessage: Record<string, any[]> = {};
+
+    if (messageIdsWithAttachments.length > 0) {
+      const allAttachments = await db
+        .select({
+          messageId: messageAttachments.messageId,
+          id: fileAttachments.id,
+          filename: fileAttachments.filename,
+          originalFilename: fileAttachments.originalFilename,
+          fileType: fileAttachments.fileType,
+          fileSize: fileAttachments.fileSize,
+          mimeType: fileAttachments.mimeType,
+          s3Url: fileAttachments.s3Url,
+          createdAt: fileAttachments.createdAt,
+        })
+        .from(messageAttachments)
+        .innerJoin(
+          fileAttachments,
+          eq(messageAttachments.fileAttachmentId, fileAttachments.id)
+        )
+        .where(inArray(messageAttachments.messageId, messageIdsWithAttachments));
+
+      for (const att of allAttachments) {
+        if (!attachmentsByMessage[att.messageId]) {
+          attachmentsByMessage[att.messageId] = [];
         }
+        attachmentsByMessage[att.messageId].push(att);
+      }
+    }
 
-        const attachments = await db
-          .select({
-            id: fileAttachments.id,
-            filename: fileAttachments.filename,
-            originalFilename: fileAttachments.originalFilename,
-            fileType: fileAttachments.fileType,
-            fileSize: fileAttachments.fileSize,
-            mimeType: fileAttachments.mimeType,
-            s3Url: fileAttachments.s3Url,
-            createdAt: fileAttachments.createdAt,
-          })
-          .from(messageAttachments)
-          .innerJoin(
-            fileAttachments,
-            eq(messageAttachments.fileAttachmentId, fileAttachments.id)
-          )
-          .where(eq(messageAttachments.messageId, message.id));
-
-        return { ...message, file_attachments: attachments };
-      })
-    );
+    const messagesWithAttachments = conversation.messages.map(message => ({
+      ...message,
+      file_attachments: attachmentsByMessage[message.id] || [],
+    }));
 
     return NextResponse.json({
       id: conversation.id,
@@ -92,7 +104,7 @@ export async function GET(
       })),
     });
   } catch (error) {
-    console.error("Error fetching conversation:", error);
+    logger.error("Failed to fetch conversation", { error: (error as Error)?.message });
     return NextResponse.json(
       { error: "Failed to fetch conversation" },
       { status: 500 }
@@ -135,7 +147,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting conversation:", error);
+    logger.error("Failed to delete conversation", { error: (error as Error)?.message });
     return NextResponse.json(
       { error: "Failed to delete conversation" },
       { status: 500 }
@@ -187,7 +199,7 @@ export async function PATCH(
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Error updating conversation:", error);
+    logger.error("Failed to update conversation", { error: (error as Error)?.message });
     return NextResponse.json(
       { error: "Failed to update conversation" },
       { status: 500 }

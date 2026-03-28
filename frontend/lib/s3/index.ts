@@ -7,6 +7,15 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from "crypto";
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(message)), timeoutMs)
+    ),
+  ]);
+}
+
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || "auto",
   endpoint: process.env.S3_ENDPOINT,
@@ -44,18 +53,22 @@ export async function uploadToS3(
   const checksum = crypto.createHash("md5").update(file).digest("hex");
 
   // Upload to S3
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: s3Key,
-      Body: file,
-      ContentType: mimeType,
-      Metadata: {
-        originalFilename: filename,
-        userId: userId,
-        checksum: checksum,
-      },
-    })
+  await withTimeout(
+    s3Client.send(
+      new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: s3Key,
+        Body: file,
+        ContentType: mimeType,
+        Metadata: {
+          originalFilename: filename,
+          userId: userId,
+          checksum: checksum,
+        },
+      })
+    ),
+    10000,
+    "S3 upload timed out after 10 seconds"
   );
 
   // For R2, use the endpoint URL; for AWS S3, use the standard format

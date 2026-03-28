@@ -1,7 +1,26 @@
+import { logger } from "@/lib/logger";
+
 // Reddit API client using direct fetch (similar to PRAW's approach)
 
 let accessToken: string | null = null;
 let tokenExpiry: number = 0;
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error;
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error("Max retries exceeded");
+}
 
 async function getAccessToken(): Promise<string> {
   // Return cached token if still valid
@@ -33,7 +52,7 @@ async function getAccessToken(): Promise<string> {
 
   if (!response.ok) {
     const text = await response.text();
-    console.error("Reddit token error:", response.status, text);
+    logger.error("Reddit token error", { statusCode: response.status, error: text });
     throw new Error(`Failed to get Reddit access token: ${response.status}`);
   }
 
@@ -46,7 +65,7 @@ async function getAccessToken(): Promise<string> {
 }
 
 async function redditFetch(endpoint: string): Promise<any> {
-  const token = await getAccessToken();
+  const token = await withRetry(() => getAccessToken());
 
   const response = await fetch(`https://oauth.reddit.com${endpoint}`, {
     headers: {
@@ -54,6 +73,24 @@ async function redditFetch(endpoint: string): Promise<any> {
       "User-Agent": "ReddiChat:v2.0 (by /u/reddichat)",
     },
   });
+
+  // If 401, token may be stale — clear and retry once
+  if (response.status === 401) {
+    accessToken = null;
+    tokenExpiry = 0;
+    const newToken = await withRetry(() => getAccessToken());
+    const retryResponse = await fetch(`https://oauth.reddit.com${endpoint}`, {
+      headers: {
+        Authorization: `Bearer ${newToken}`,
+        "User-Agent": "ReddiChat:v2.0 (by /u/reddichat)",
+      },
+    });
+    if (!retryResponse.ok) {
+      const text = await retryResponse.text();
+      throw new Error(`Reddit API error: ${retryResponse.status} - ${text}`);
+    }
+    return retryResponse.json();
+  }
 
   if (!response.ok) {
     const text = await response.text();
@@ -207,7 +244,7 @@ export async function searchReddit(
       },
     };
   } catch (error: any) {
-    console.error("Reddit search error:", error);
+    logger.error("Reddit search error", { error: error?.message });
 
     if (error.message?.includes("rate limit")) {
       return {
@@ -269,7 +306,7 @@ export async function getRedditUserInfo(
 
     return { user };
   } catch (error: any) {
-    console.error("Reddit user fetch error:", error);
+    logger.error("Reddit user fetch error", { error: error?.message });
     return {
       user: {} as RedditUser,
       error: error.message || "Failed to fetch user data",
@@ -403,7 +440,7 @@ export async function getUserPosts(
     } catch (fetchError: any) {
       // On 403/private profile, try author search fallback (only on first page)
       if (fetchError.message?.includes("403") && !after) {
-        console.log(`Profile forbidden for u/${username}, trying author search fallback`);
+        logger.info("Profile forbidden, trying author search fallback", { userId: username });
         return await searchUserPosts(username, limit, sort, time);
       }
       throw fetchError;
@@ -415,7 +452,7 @@ export async function getUserPosts(
 
     // If no posts found and no pagination cursor, try author search fallback
     if (posts.length === 0 && !after) {
-      console.log(`Profile empty for u/${username}, trying author search fallback`);
+      logger.info("Profile empty, trying author search fallback", { userId: username });
       return await searchUserPosts(username, limit, sort, time);
     }
 
@@ -425,7 +462,7 @@ export async function getUserPosts(
       hasMore: !!response.data.after,
     };
   } catch (error: any) {
-    console.error("Reddit user posts fetch error:", error);
+    logger.error("Reddit user posts fetch error", { error: error?.message });
     return {
       items: [],
       after: null,
@@ -461,7 +498,7 @@ async function searchUserPosts(
       parsePostData(child.data)
     );
 
-    console.log(`Found ${posts.length} posts via author search for u/${username}`);
+    logger.info("Found posts via author search", { userId: username, count: posts.length });
 
     return {
       items: posts,
@@ -470,7 +507,7 @@ async function searchUserPosts(
       usedSearchFallback: true,
     };
   } catch (error: any) {
-    console.error("Reddit author search fallback error:", error);
+    logger.error("Reddit author search fallback error", { error: error?.message });
     return {
       items: [],
       after: null,
@@ -508,7 +545,7 @@ export async function getUserComments(
     } catch (fetchError: any) {
       // On 403/private profile, return empty list (no fallback for comments)
       if (fetchError.message?.includes("403")) {
-        console.log(`Comments forbidden for u/${username}`);
+        logger.info("Comments forbidden", { userId: username });
         return { items: [], after: null, hasMore: false };
       }
       throw fetchError;
@@ -537,7 +574,7 @@ export async function getUserComments(
       hasMore: !!response.data.after,
     };
   } catch (error: any) {
-    console.error("Reddit user comments fetch error:", error);
+    logger.error("Reddit user comments fetch error", { error: error?.message });
     return {
       items: [],
       after: null,
@@ -581,7 +618,7 @@ export async function getRedditUser(
       comments: commentsResult.items,
     };
   } catch (error: any) {
-    console.error("Reddit user fetch error:", error);
+    logger.error("Reddit user fetch error", { error: error?.message });
     return {
       user: {} as RedditUser,
       posts: [],

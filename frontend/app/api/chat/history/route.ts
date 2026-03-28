@@ -4,6 +4,9 @@ import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { conversations, messages } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { paginationSchema, conversationTitleSchema } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,9 +18,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const rateLimit = checkRateLimit(`reddit:${session.user.id}`, RATE_LIMITS.reddit);
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    }
+
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const params = paginationSchema.safeParse({
+      limit: searchParams.get("limit"),
+      offset: searchParams.get("offset"),
+    });
+    const limit = params.success ? params.data.limit : 50;
+    const offset = params.success ? params.data.offset : 0;
 
     const userConversations = await db
       .select({
@@ -37,7 +49,7 @@ export async function GET(request: NextRequest) {
       total: userConversations.length,
     });
   } catch (error) {
-    console.error("Error fetching conversations:", error);
+    logger.error("Failed to fetch conversations", { error: (error as Error)?.message });
     return NextResponse.json(
       { error: "Failed to fetch conversations" },
       { status: 500 }
@@ -55,15 +67,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { title } = body;
-
-    if (!title) {
-      return NextResponse.json(
-        { error: "Title is required" },
-        { status: 400 }
-      );
+    const rateLimit = checkRateLimit(`reddit:${session.user.id}`, RATE_LIMITS.reddit);
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
+
+    const body = await request.json();
+    const titleValidation = conversationTitleSchema.safeParse(body);
+    if (!titleValidation.success) {
+      return NextResponse.json({ error: titleValidation.error.errors[0]?.message || "Invalid title" }, { status: 400 });
+    }
+
+    const { title } = body;
 
     const [newConversation] = await db
       .insert(conversations)
@@ -75,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(newConversation, { status: 201 });
   } catch (error) {
-    console.error("Error creating conversation:", error);
+    logger.error("Failed to create conversation", { error: (error as Error)?.message });
     return NextResponse.json(
       { error: "Failed to create conversation" },
       { status: 500 }

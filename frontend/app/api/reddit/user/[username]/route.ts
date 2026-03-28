@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedditUserInfo } from "@/lib/reddit";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { redditUsernameSchema } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -8,11 +11,16 @@ export async function GET(
   try {
     const { username } = await params;
 
-    if (!username) {
-      return NextResponse.json(
-        { error: "Username is required" },
-        { status: 400 }
-      );
+    // Validate username
+    const usernameValidation = redditUsernameSchema.safeParse(username);
+    if (!usernameValidation.success) {
+      return NextResponse.json({ error: "Invalid username" }, { status: 400 });
+    }
+
+    // Rate limit by IP or username
+    const rateLimit = checkRateLimit(`reddit:${username}`, RATE_LIMITS.reddit);
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
     const result = await getRedditUserInfo(username);
@@ -26,7 +34,7 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error fetching Reddit user:", error);
+    logger.error("Failed to fetch Reddit user", { error: (error as Error)?.message });
     return NextResponse.json(
       { error: "Failed to fetch Reddit user data" },
       { status: 500 }

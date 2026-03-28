@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { chatMessageSchema } from "@/lib/validation";
 import { db } from "@/lib/db";
 import {
   conversations,
@@ -12,6 +14,7 @@ import { ModelMessage } from "ai";
 import { streamChatResponse, extractSources } from "@/lib/ai/agent";
 import { eq, asc } from "drizzle-orm";
 import { uploadToS3, getFileType } from "@/lib/s3";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,19 +43,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const rateLimit = checkRateLimit(`chat:${session.user.id}`, RATE_LIMITS.chat);
+    if (!rateLimit.success) {
+      return new Response(
+        createSSEMessage({ type: "error", content: "Rate limit exceeded. Please try again later." }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     const formData = await request.formData();
     const message = formData.get("message") as string;
     const conversationId = formData.get("conversation_id") as string | null;
+    const modelId = formData.get("model") as string | null;
     const files = formData.getAll("files") as File[];
 
-    if (!message) {
+    const validation = chatMessageSchema.safeParse({
+      message,
+      conversationId,
+      model: modelId,
+    });
+
+    if (!validation.success) {
       return new Response(
-        createSSEMessage({ type: "error", content: "Message is required" }),
+        createSSEMessage({ type: "error", content: validation.error.errors[0]?.message || "Invalid input" }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "text/event-stream",
-          },
+          headers: { "Content-Type": "text/event-stream" },
         }
       );
     }
@@ -167,9 +189,11 @@ export async function POST(request: NextRequest) {
           let toolUsed: string | null = null;
           let allSources: any[] = [];
           let fullContent = "";
+          let streamCompleted = false;
 
           const result = await streamChatResponse({
             messages: aiMessages,
+            modelId: modelId || undefined,
             onToolStart: (name) => {
               toolUsed = name;
               controller.enqueue(
@@ -199,6 +223,20 @@ export async function POST(request: NextRequest) {
                 createSSEMessage({ type: "content", delta: chunk })
               )
             );
+          }
+          streamCompleted = true;
+
+          if (!streamCompleted || !fullContent.trim()) {
+            controller.enqueue(
+              encoder.encode(
+                createSSEMessage({
+                  type: "error",
+                  content: "Response was incomplete. Please try again.",
+                })
+              )
+            );
+            controller.close();
+            return;
           }
 
           // Save assistant message
@@ -246,7 +284,7 @@ export async function POST(request: NextRequest) {
 
           controller.close();
         } catch (error: any) {
-          console.error("Stream error:", error);
+          logger.error("Stream error", { error: error.message });
           controller.enqueue(
             encoder.encode(
               createSSEMessage({
@@ -269,7 +307,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("Chat stream error:", error);
+    logger.error("Chat stream error", { error: error.message });
     return new Response(
       createSSEMessage({
         type: "error",

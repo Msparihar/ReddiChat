@@ -9,6 +9,7 @@ import {
   bigint,
   integer,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -72,7 +73,9 @@ export const conversations = pgTable("conversations", {
   title: varchar("title", { length: 500 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+}, (table) => [
+  index("conversations_user_updated_idx").on(table.userId, table.updatedAt),
+]);
 
 // Messages table
 export const messages = pgTable("messages", {
@@ -87,7 +90,10 @@ export const messages = pgTable("messages", {
   sources: jsonb("sources").$type<RedditSource[] | null>(),
   toolUsed: varchar("tool_used", { length: 100 }),
   hasAttachments: boolean("has_attachments").default(false),
-});
+}, (table) => [
+  index("messages_conversation_idx").on(table.conversationId),
+  index("messages_user_idx").on(table.userId),
+]);
 
 // File attachments table
 export const fileAttachments = pgTable("file_attachments", {
@@ -108,7 +114,9 @@ export const fileAttachments = pgTable("file_attachments", {
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   fileMetadata: jsonb("file_metadata"),
   checksum: varchar("checksum", { length: 64 }),
-});
+}, (table) => [
+  index("file_attachments_user_idx").on(table.userId),
+]);
 
 // Message attachments junction table
 export const messageAttachments = pgTable("message_attachments", {
@@ -121,7 +129,9 @@ export const messageAttachments = pgTable("message_attachments", {
     .notNull(),
   attachmentOrder: integer("attachment_order").default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+}, (table) => [
+  index("msg_attachments_file_idx").on(table.fileAttachmentId),
+]);
 
 // User searches history table
 export const userSearches = pgTable(
