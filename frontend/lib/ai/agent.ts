@@ -1,14 +1,31 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, ModelMessage, stepCountIs } from "ai";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { searchRedditTool } from "./tools/reddit";
 import { webSearchTool } from "./tools/web-search";
+import { getModelById, DEFAULT_MODEL_ID } from "./models";
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-const model = google("gemini-2.0-flash");
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+function getAIModel(modelId?: string) {
+  const config = getModelById(modelId || DEFAULT_MODEL_ID);
+  if (!config) {
+    return google("gemini-2.5-flash");
+  }
+
+  if (config.provider === "openai") {
+    return openai(config.modelId);
+  }
+
+  return google(config.modelId);
+}
 
 export const tools = {
   search_reddit: searchRedditTool,
@@ -19,15 +36,16 @@ export type ToolName = keyof typeof tools;
 
 export interface StreamChatOptions {
   messages: ModelMessage[];
+  modelId?: string;
   onToolStart?: (toolName: string) => void;
   onToolEnd?: (toolName: string, result: any) => void;
 }
 
 export async function streamChatResponse(options: StreamChatOptions) {
-  const { messages, onToolStart, onToolEnd } = options;
+  const { messages, modelId, onToolStart, onToolEnd } = options;
 
   const result = streamText({
-    model,
+    model: getAIModel(modelId),
     system: SYSTEM_PROMPT,
     messages,
     tools,

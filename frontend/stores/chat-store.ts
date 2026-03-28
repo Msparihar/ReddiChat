@@ -3,10 +3,10 @@ import {
   generateUUID,
   parseSSEStream,
   handleStreamError,
-  debounce,
   validateSSEEvent,
   SSEEvent,
 } from "@/lib/streaming";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
 
 export interface FileAttachment {
   id: string;
@@ -50,11 +50,13 @@ interface ChatState {
   isStreaming: boolean;
   pendingMessage: Message | null;
   currentTool: string | null;
+  selectedModel: string;
   failedMessage: Message | null;
   retryCount: number;
   maxRetries: number;
 
   // Actions
+  setSelectedModel: (modelId: string) => void;
   startStreaming: (pendingMessage: Message) => void;
   updateStreamingContent: (delta: string) => void;
   updateCurrentTool: (tool: string | null) => void;
@@ -80,9 +82,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isStreaming: false,
   pendingMessage: null,
   currentTool: null,
+  selectedModel: DEFAULT_MODEL_ID,
   failedMessage: null,
   retryCount: 0,
   maxRetries: 3,
+
+  setSelectedModel: (modelId: string) => {
+    set({ selectedModel: modelId });
+  },
 
   startStreaming: (pendingMessage: Message) => {
     set({
@@ -355,13 +362,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       currentTool: null,
     }));
 
-    const debouncedUpdateContent = debounce((delta: string) => {
-      get().updateStreamingContent(delta);
-    }, 50);
-
     try {
       const formData = new FormData();
       formData.append("message", content);
+      formData.append("model", get().selectedModel);
 
       if (currentThread?.id) {
         formData.append("conversation_id", currentThread.id);
@@ -403,7 +407,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 hasReceivedContent = true;
               }
               if (event.delta) {
-                debouncedUpdateContent(event.delta);
+                get().updateStreamingContent(event.delta);
               }
               break;
 
