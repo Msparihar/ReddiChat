@@ -56,3 +56,48 @@ export async function sendLoginEmail(
     console.error("Failed to send login email:", error);
   }
 }
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export async function sendContactEmail(
+  fromUserEmail: string,
+  subject: string,
+  message: string
+): Promise<void> {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    throw new Error("Email credentials not configured");
+  }
+
+  const safeSubject = escapeHtml(subject);
+  const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
+  const safeEmail = escapeHtml(fromUserEmail);
+
+  await transporter.sendMail({
+    from: `"ReddiChat" <${process.env.SMTP_USER}>`,
+    to: "manishsparihar2020@gmail.com",
+    replyTo: fromUserEmail,
+    subject: `[ReddiChat Contact] ${subject}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #FF4500;">New Contact Message</h2>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0 0 10px 0;"><strong>From:</strong> ${safeEmail}</p>
+          <p style="margin: 0 0 10px 0;"><strong>Subject:</strong> ${safeSubject}</p>
+        </div>
+        <div style="background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0; line-height: 1.6;">${safeMessage}</p>
+        </div>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        <p style="color: #666; font-size: 12px;">
+          Sent via <a href="https://reddichat.manishsingh.tech">ReddiChat</a> contact form
+        </p>
+      </div>
+    `,
+  });
+}

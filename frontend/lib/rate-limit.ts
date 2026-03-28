@@ -45,4 +45,5 @@ export const RATE_LIMITS = {
   chat: { maxRequests: 30, windowMs: 3600000 } as RateLimitConfig,      // 30/hour
   upload: { maxRequests: 20, windowMs: 3600000 } as RateLimitConfig,     // 20/hour
   reddit: { maxRequests: 60, windowMs: 3600000 } as RateLimitConfig,     // 60/hour
+  contact: { maxRequests: 5, windowMs: 86400000 } as RateLimitConfig,   // 5/day
 };

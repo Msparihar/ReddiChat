@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
+import { ContactDialog } from "./ContactDialog";
 
 interface ProfileDropdownProps {
   isCollapsed: boolean;
@@ -26,6 +27,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   const { data: usageData, isLoading: usageLoading, isError: usageError } = useUsage();
+  const [contactOpen, setContactOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -82,6 +84,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
     : "";
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
@@ -262,11 +265,15 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
         <DropdownMenuSeparator className={isDark ? "bg-gray-700" : "bg-gray-200"} />
 
         {/* Billing Contact */}
-        <DropdownMenuItem asChild className={cn("cursor-pointer", isDark ? "hover:bg-gray-800" : "hover:bg-gray-50")}>
-          <a href="mailto:manishsparihar2020@gmail.com" className="flex items-center">
-            <Mail className="w-4 h-4 mr-2" />
-            <span className="text-sm">Contact for billing</span>
-          </a>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setContactOpen(true);
+          }}
+          className={cn("cursor-pointer", isDark ? "hover:bg-gray-800" : "hover:bg-gray-50")}
+        >
+          <Mail className="w-4 h-4 mr-2" />
+          <span className="text-sm">Contact for billing</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator className={isDark ? "bg-gray-700" : "bg-gray-200"} />
@@ -281,5 +288,11 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+      <ContactDialog
+        open={contactOpen}
+        onOpenChange={setContactOpen}
+        userEmail={user?.email || ""}
+      />
+    </>
   );
 }
