@@ -86,6 +86,7 @@ export function Sidebar() {
                     isDark ? "hover:bg-gray-800" : "hover:bg-gray-200"
                   )}
                   title="Collapse sidebar"
+                  aria-label="Collapse sidebar"
                 >
                   <Menu
                     className={cn(

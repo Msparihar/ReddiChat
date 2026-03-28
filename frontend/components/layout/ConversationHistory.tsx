@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MessageSquare, Trash2 } from "lucide-react";
+import { MessageSquare, Trash2, Search } from "lucide-react";
 import { useChatStore } from "@/stores/chat-store";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,15 @@ export function ConversationHistory({
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredThreads = searchQuery.trim()
+    ? threads.filter((t) =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : threads;
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["conversations"],
     queryFn: fetchConversations,
@@ -53,6 +62,13 @@ export function ConversationHistory({
       (window as any).refreshConversationList = refetch;
     }
   }, [refetch]);
+
+  // Expose search focus for keyboard shortcut
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).focusConversationSearch = () => searchInputRef.current?.focus();
+    }
+  }, []);
 
   const handleSelectConversation = async (conversationId: string) => {
     try {
@@ -132,17 +148,35 @@ export function ConversationHistory({
 
   return (
     <div className="p-2 space-y-1">
-      {threads.length === 0 ? (
+      {/* Search */}
+      <div className="relative mb-2">
+        <Search className={cn("absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5", isDark ? "text-gray-500" : "text-gray-400")} />
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search conversations..."
+          className={cn(
+            "w-full text-xs pl-8 pr-3 py-2 rounded-md border focus:outline-none focus:ring-1 focus:ring-purple-500",
+            isDark
+              ? "bg-gray-800 border-gray-700 text-gray-200 placeholder:text-gray-500"
+              : "bg-white border-gray-200 text-gray-800 placeholder:text-gray-400"
+          )}
+        />
+      </div>
+
+      {filteredThreads.length === 0 ? (
         <div
           className={cn(
             "text-sm text-center py-4",
             isDark ? "text-gray-500" : "text-gray-400"
           )}
         >
-          No conversations yet
+          {searchQuery.trim() ? "No matching conversations" : "No conversations yet"}
         </div>
       ) : (
-        threads.map((thread) => (
+        filteredThreads.map((thread) => (
           <div
             key={thread.id || "new"}
             className={cn(
@@ -191,6 +225,7 @@ export function ConversationHistory({
                     : "hover:bg-gray-300 text-gray-500"
                 )}
                 title="Delete conversation"
+                aria-label="Delete conversation"
               >
                 <Trash2 className="w-3 h-3" />
               </button>

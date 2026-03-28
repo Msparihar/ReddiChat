@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { SignInCard } from "@/components/auth/SignInCard";
 import { useSession } from "@/lib/auth/client";
 import { useUIStore } from "@/stores/ui-store";
+import { useChatStore } from "@/stores/chat-store";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 
@@ -12,10 +14,39 @@ export default function ChatLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isSidebarOpen } = useUIStore();
+  const { isSidebarOpen, setSidebarOpen } = useUIStore();
+  const { createNewThread } = useChatStore();
   const { data: session, isPending } = useSession();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isModifier = e.metaKey || e.ctrlKey;
+
+      // Cmd/Ctrl + K — focus conversation search
+      if (isModifier && e.key === "k") {
+        e.preventDefault();
+        (window as any).focusConversationSearch?.();
+      }
+
+      // Cmd/Ctrl + N — new chat
+      if (isModifier && e.key === "n") {
+        e.preventDefault();
+        createNewThread();
+      }
+
+      // Escape — close sidebar on mobile
+      if (e.key === "Escape") {
+        if (typeof window !== "undefined" && window.innerWidth < 768 && isSidebarOpen) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [createNewThread, isSidebarOpen, setSidebarOpen]);
 
   if (isPending) {
     return (

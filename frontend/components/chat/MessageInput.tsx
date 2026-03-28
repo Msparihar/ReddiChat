@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Send, Paperclip, X, Check, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Send, Paperclip, X, Check, ChevronDown, Lock } from "lucide-react";
 import { useChatStore } from "@/stores/chat-store";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
-import { AI_MODELS } from "@/lib/ai/models";
+import { AI_MODELS, DEFAULT_MODEL_ID } from "@/lib/ai/models";
+import { isModelAllowed, UserRole } from "@/lib/tiers";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -85,6 +86,16 @@ export function MessageInput() {
   const currentModel = AI_MODELS.find((m) => m.id === selectedModel) || AI_MODELS[0];
 
   const { data: usageData, isLoading: usageLoading, isError: usageError } = useUsage();
+  const userRole = (usageData?.role || "free") as string;
+
+  useEffect(() => {
+    if (usageData?.role && selectedModel) {
+      const role = usageData.role as UserRole;
+      if (!isModelAllowed(role, selectedModel)) {
+        setSelectedModel(DEFAULT_MODEL_ID);
+      }
+    }
+  }, [usageData?.role, selectedModel, setSelectedModel]);
 
   const messagesRemaining = usageData
     ? usageData.limits.messages - usageData.usage.messages
@@ -219,6 +230,7 @@ export function MessageInput() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
+                    aria-label="Select AI model"
                     className={cn(
                       "flex items-center gap-1.5 h-7 px-2 text-xs rounded-md",
                       isDark
@@ -251,34 +263,36 @@ export function MessageInput() {
                       : "bg-white border-gray-200"
                   )}
                 >
-                  {AI_MODELS.map((model) => (
-                    <DropdownMenuItem
-                      key={model.id}
-                      onSelect={() => setSelectedModel(model.id)}
-                      className={cn(
-                        "flex items-center justify-between gap-2 cursor-pointer",
-                        isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        {MODEL_ICONS[model.id]}
-                        <div className="flex flex-col">
-                          <span className="text-sm">{model.displayName}</span>
-                          <span
-                            className={cn(
-                              "text-[10px]",
-                              isDark ? "text-gray-500" : "text-gray-400"
-                            )}
-                          >
-                            {model.description}
-                          </span>
+                  {AI_MODELS.map((model) => {
+                    const allowed = isModelAllowed(userRole as UserRole, model.id);
+                    return (
+                      <DropdownMenuItem
+                        key={model.id}
+                        onSelect={() => allowed && setSelectedModel(model.id)}
+                        className={cn(
+                          "flex items-center justify-between gap-2 cursor-pointer",
+                          isDark ? "hover:bg-gray-800" : "hover:bg-gray-50",
+                          !allowed && "opacity-50 cursor-not-allowed"
+                        )}
+                        disabled={!allowed}
+                      >
+                        <div className="flex items-center gap-2">
+                          {MODEL_ICONS[model.id]}
+                          <div className="flex flex-col">
+                            <span className="text-sm">{model.displayName}</span>
+                            <span className={cn("text-[10px]", isDark ? "text-gray-500" : "text-gray-400")}>
+                              {model.description}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      {selectedModel === model.id && (
-                        <Check className="w-4 h-4 text-purple-500" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
+                        {selectedModel === model.id ? (
+                          <Check className="w-4 h-4 text-purple-500" />
+                        ) : !allowed ? (
+                          <Lock className="w-3.5 h-3.5 text-gray-400" />
+                        ) : null}
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -306,9 +320,11 @@ export function MessageInput() {
                   "p-1.5 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
                   isDark
                     ? "text-gray-400 hover:bg-gray-800"
-                    : "text-gray-500 hover:bg-gray-100"
+                    : "text-gray-500 hover:bg-gray-100",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
                 )}
                 title="Attach files"
+                aria-label="Attach files"
               >
                 <Paperclip className="w-4 h-4" />
               </button>
@@ -323,6 +339,8 @@ export function MessageInput() {
 
               {/* Usage indicator */}
               <div
+                role="status"
+                aria-label={messagesRemaining !== null ? `${messagesRemaining} messages remaining today` : "Loading usage"}
                 className={cn("text-[11px] flex items-center gap-1", getUsageColor())}
                 title={
                   usageData
@@ -348,9 +366,11 @@ export function MessageInput() {
                   ? "bg-purple-600 hover:bg-purple-700 text-white"
                   : isDark
                     ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
               )}
               title={isStreaming ? "AI is responding..." : "Send message"}
+              aria-label={isStreaming ? "AI is responding" : "Send message"}
             >
               <Send className="w-4 h-4" />
             </button>

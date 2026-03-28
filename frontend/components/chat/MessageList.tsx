@@ -89,6 +89,7 @@ export function MessageList() {
               </div>
             ) : (
               <div
+                aria-busy={message.isPending || undefined}
                 className={cn(
                   "px-4 py-6 group",
                   isDark ? "bg-gray-950" : "bg-white",
@@ -99,13 +100,27 @@ export function MessageList() {
                   <div className="flex-1 min-w-0">
                     <MarkdownRenderer content={message.content} />
 
-                    {message.isError && message.canRetry && (
-                      <button
-                        onClick={() => useChatStore.getState().retryFailedMessage()}
-                        className="mt-2 text-sm text-blue-400 hover:text-blue-300"
-                      >
-                        Retry
-                      </button>
+                    {message.isError && (
+                      <div className={cn("mt-3 flex items-center gap-2", isDark ? "text-gray-400" : "text-gray-500")}>
+                        {message.canRetry && (
+                          <button
+                            onClick={() => useChatStore.getState().retryFailedMessage()}
+                            className={cn(
+                              "text-xs px-3 py-1.5 rounded-md transition-colors",
+                              "bg-blue-600 hover:bg-blue-700 text-white",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                            )}
+                            aria-label="Retry sending message"
+                          >
+                            Retry
+                          </button>
+                        )}
+                        <span className="text-xs">
+                          {message.content.includes("Rate limit") && "Try again in a few minutes"}
+                          {message.content.includes("Session expired") && "Please sign in again"}
+                          {message.content.includes("timed out") && "The request took too long"}
+                        </span>
+                      </div>
                     )}
 
                     {message.isPending && (
@@ -136,7 +151,8 @@ export function MessageList() {
                         className={cn(
                           "p-1 rounded transition-colors",
                           isDark ? "hover:bg-gray-800 text-gray-500" : "hover:bg-gray-100 text-gray-400",
-                          "md:opacity-0 md:group-hover:opacity-100"
+                          "md:opacity-0 md:group-hover:opacity-100",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
                         )}
                         title="Copy message"
                         aria-label="Copy message"

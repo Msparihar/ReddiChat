@@ -71,6 +71,7 @@ interface ChatState {
   sendMessage: (content: string, files?: File[]) => Promise<void>;
   deleteThread: (threadId: string) => void;
   setMessages: (messages: Message[]) => void;
+  exportAsMarkdown: () => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -529,5 +530,37 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setMessages: (messages: Message[]) => {
     set({ messages });
+  },
+
+  exportAsMarkdown: () => {
+    const { messages, currentThread } = get();
+    if (messages.length === 0) return;
+
+    const title = currentThread?.title || "Conversation";
+    let md = `# ${title}\n\n`;
+
+    for (const msg of messages) {
+      const role = msg.role === "user" ? "You" : "Assistant";
+      md += `## ${role}\n\n${msg.content}\n\n`;
+
+      if (msg.sources && msg.sources.length > 0) {
+        md += `### Sources\n\n`;
+        for (const source of msg.sources) {
+          md += `- [${source.title || "Link"}](${source.url || source.permalink || "#"})\n`;
+        }
+        md += `\n`;
+      }
+    }
+
+    // Trigger download
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title.replace(/[^a-zA-Z0-9]/g, "_")}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   },
 }));
