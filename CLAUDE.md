@@ -48,9 +48,11 @@ Reddit-powered AI chat application with social authentication and multi-model su
 | v1.2.0 | Production hardening — rate limiting, validation, DB optimization | Shipped |
 | v1.3.0 | Security & cost protection — logging, daily limits, token budgets, file hardening | Shipped |
 | v1.3.1 | Usage visibility — API endpoint, UI indicator, precise limit errors | Shipped |
-| v1.4.0 | Profile dropdown + copy button + mobile layout | Next |
-| v1.5.0 | Search, export, streaming phases, keyboard shortcuts, error UI, accessibility | Planned |
-| v1.6.0 | User roles & tier-based access control | Planned |
+| v1.4.0 | Profile dropdown + copy button + mobile layout | Shipped |
+| v1.4.1 | In-app contact form | Shipped |
+| v1.4.2 | Quick topic chips in contact dialog | Shipped |
+| v1.5.0 | Search, export, streaming phases, keyboard shortcuts, error UI, accessibility | Shipped |
+| v1.6.0 | User roles & tier-based access control | Shipped |
 | v2.0.0 | Community Intelligence — sentiment, trending, TLDR, subreddit pages | Planned |
 | v2.1.0 | Monetization — Stripe billing on top of v1.6.0 tiers | Planned |
 

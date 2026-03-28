@@ -4,6 +4,10 @@ import { streamText, ModelMessage, stepCountIs } from "ai";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { searchRedditTool } from "./tools/reddit";
 import { webSearchTool } from "./tools/web-search";
+import { analyzeSentimentTool } from "./tools/sentiment";
+import { compareSubredditsTool } from "./tools/compare";
+import { getTrendingTool } from "./tools/trending";
+import { summarizeThreadTool } from "./tools/summarize";
 import { getModelById, DEFAULT_MODEL_ID } from "./models";
 
 const google = createGoogleGenerativeAI({
@@ -30,6 +34,10 @@ function getAIModel(modelId?: string) {
 export const tools = {
   search_reddit: searchRedditTool,
   web_search: webSearchTool,
+  analyze_sentiment: analyzeSentimentTool,
+  compare_subreddits: compareSubredditsTool,
+  get_trending: getTrendingTool,
+  summarize_thread: summarizeThreadTool,
 };
 
 export type ToolName = keyof typeof tools;
@@ -92,6 +100,57 @@ export function extractSources(toolResults: any[]): any[] {
           url: item.url,
           snippet: item.snippet,
           source: item.source,
+        });
+      }
+    }
+    if (result.toolName === "analyze_sentiment" && result.output?.posts) {
+      for (const post of result.output.posts) {
+        sources.push({
+          type: "reddit",
+          title: post.title,
+          url: post.permalink,
+          subreddit: post.subreddit,
+          score: post.score,
+          num_comments: post.numComments,
+        });
+      }
+    }
+    if (result.toolName === "compare_subreddits" && result.output?.subreddits) {
+      for (const sub of result.output.subreddits) {
+        for (const post of sub.posts || []) {
+          sources.push({
+            type: "reddit",
+            title: post.title,
+            url: post.permalink,
+            subreddit: sub.subreddit,
+            score: post.score,
+            num_comments: post.numComments,
+          });
+        }
+      }
+    }
+    if (result.toolName === "get_trending" && result.output?.posts) {
+      for (const post of result.output.posts) {
+        sources.push({
+          type: "reddit",
+          title: post.title,
+          url: post.permalink,
+          subreddit: post.subreddit,
+          score: post.score,
+          num_comments: post.numComments,
+        });
+      }
+    }
+    if (result.toolName === "summarize_thread" && result.output?.threads) {
+      for (const thread of result.output.threads) {
+        sources.push({
+          type: "reddit",
+          title: thread.title,
+          url: thread.permalink,
+          subreddit: thread.subreddit,
+          author: thread.author,
+          score: thread.score,
+          num_comments: thread.numComments,
         });
       }
     }

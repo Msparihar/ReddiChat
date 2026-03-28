@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RedditSourceProps {
   source: {
     title: string;
     text?: string;
+    snippet?: string;
     url: string;
     subreddit: string;
     author: string;
@@ -35,8 +37,29 @@ export function RedditSource({ source }: RedditSourceProps) {
     return num.toString();
   };
 
+  const isImageUrl = (url: string) =>
+    /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+
+  const previewText = source.text !== "[No text content; this is a link post]"
+    ? (source.text || source.snippet)
+    : source.snippet;
+
   return (
-    <div className="bg-gray-750 border border-gray-600 rounded-lg p-3 hover:bg-gray-700 transition-colors">
+    <div className="bg-gray-750 border border-gray-600 rounded-lg overflow-hidden hover:bg-gray-700 transition-colors">
+      {isImageUrl(source.url) && (
+        <div className="w-full h-32 overflow-hidden bg-gray-700">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={source.url}
+            alt={source.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+            }}
+          />
+        </div>
+      )}
+      <div className="p-3">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium text-gray-200 line-clamp-2 mb-1">
@@ -82,8 +105,7 @@ export function RedditSource({ source }: RedditSourceProps) {
         </div>
       </div>
 
-      {source.text &&
-        source.text !== "[No text content; this is a link post]" && (
+      {previewText && (
           <div>
             <p
               className={cn(
@@ -91,14 +113,18 @@ export function RedditSource({ source }: RedditSourceProps) {
                 !isExpanded && "line-clamp-2"
               )}
             >
-              {source.text}
+              {previewText}
             </p>
-            {source.text.length > 150 && (
+            {previewText.length > 150 && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="text-xs text-blue-400 hover:text-blue-300 mt-1 transition-colors"
+                className="flex items-center gap-0.5 text-xs text-blue-400 hover:text-blue-300 mt-1 transition-colors"
               >
-                {isExpanded ? "Show less" : "Show more"}
+                {isExpanded ? (
+                  <>Show less <ChevronUp className="w-3 h-3" /></>
+                ) : (
+                  <>Show more <ChevronDown className="w-3 h-3" /></>
+                )}
               </button>
             )}
           </div>
@@ -111,31 +137,21 @@ export function RedditSource({ source }: RedditSourceProps) {
           rel="noopener noreferrer"
           className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
         >
-          View on Reddit
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-            />
-          </svg>
+          Open on Reddit
+          <ExternalLink className="w-3 h-3" />
         </a>
-        {source.url !== source.permalink && (
+        {source.url !== source.permalink && !isImageUrl(source.url) && (
           <a
             href={source.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+            className="text-xs text-gray-400 hover:text-gray-300 transition-colors flex items-center gap-1"
           >
             Original Link
+            <ExternalLink className="w-3 h-3" />
           </a>
         )}
+      </div>
       </div>
     </div>
   );
