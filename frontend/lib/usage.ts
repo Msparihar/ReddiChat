@@ -42,6 +42,11 @@ export async function getDailyUsage(userId: string) {
   };
 }
 
+function formatBytes(bytes: number): string {
+  const mb = Math.round(bytes / (1024 * 1024));
+  return `${mb}MB`;
+}
+
 export async function checkDailyLimit(
   userId: string,
   type: "message" | "upload",
@@ -53,7 +58,7 @@ export async function checkDailyLimit(
     if (usage.messageCount >= limits.maxMessagesPerDay) {
       return {
         allowed: false,
-        reason: "Daily message limit reached. Resets at midnight UTC.",
+        reason: `You've used ${usage.messageCount}/${limits.maxMessagesPerDay} messages today. Resets at midnight UTC.`,
         current: usage.messageCount,
         limit: limits.maxMessagesPerDay,
       };
@@ -61,7 +66,7 @@ export async function checkDailyLimit(
     if (usage.estimatedTokens >= limits.maxTokensPerDay) {
       return {
         allowed: false,
-        reason: "Daily token limit reached. Resets at midnight UTC.",
+        reason: `You've used ${usage.estimatedTokens.toLocaleString()}/${limits.maxTokensPerDay.toLocaleString()} tokens today. Resets at midnight UTC.`,
         current: usage.estimatedTokens,
         limit: limits.maxTokensPerDay,
       };
@@ -72,7 +77,7 @@ export async function checkDailyLimit(
     if (usage.uploadCount >= limits.maxUploadsPerDay) {
       return {
         allowed: false,
-        reason: "Daily upload limit reached. Resets at midnight UTC.",
+        reason: `You've used ${usage.uploadCount}/${limits.maxUploadsPerDay} uploads today. Resets at midnight UTC.`,
         current: usage.uploadCount,
         limit: limits.maxUploadsPerDay,
       };
@@ -80,7 +85,7 @@ export async function checkDailyLimit(
     if (usage.uploadBytes >= limits.maxUploadBytesPerDay) {
       return {
         allowed: false,
-        reason: "Daily upload size limit reached. Resets at midnight UTC.",
+        reason: `You've used ${formatBytes(usage.uploadBytes)}/${formatBytes(limits.maxUploadBytesPerDay)} of daily upload quota. Resets at midnight UTC.`,
         current: usage.uploadBytes,
         limit: limits.maxUploadBytesPerDay,
       };

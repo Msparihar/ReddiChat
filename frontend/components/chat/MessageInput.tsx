@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "motion/react";
+import { useUsage } from "@/hooks/use-usage";
 
 const OPENAI_ICON = (
   <>
@@ -82,6 +83,22 @@ export function MessageInput() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentModel = AI_MODELS.find((m) => m.id === selectedModel) || AI_MODELS[0];
+
+  const { data: usageData, isLoading: usageLoading, isError: usageError } = useUsage();
+
+  const messagesRemaining = usageData
+    ? usageData.limits.messages - usageData.usage.messages
+    : null;
+
+  const usageExhausted = messagesRemaining !== null && messagesRemaining <= 0;
+
+  const getUsageColor = () => {
+    if (messagesRemaining === null) return isDark ? "text-gray-500" : "text-gray-400";
+    if (messagesRemaining > 20) return isDark ? "text-gray-500" : "text-gray-400";
+    if (messagesRemaining > 5) return "text-amber-500";
+    if (messagesRemaining > 0) return "text-red-500";
+    return "text-red-500 font-bold";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -295,12 +312,36 @@ export function MessageInput() {
               >
                 <Paperclip className="w-4 h-4" />
               </button>
+
+              {/* Divider */}
+              <div
+                className={cn(
+                  "h-4 w-px",
+                  isDark ? "bg-gray-700" : "bg-gray-200"
+                )}
+              />
+
+              {/* Usage indicator */}
+              <div
+                className={cn("text-[11px] flex items-center gap-1", getUsageColor())}
+                title={
+                  usageData
+                    ? `Messages: ${usageData.usage.messages}/${usageData.limits.messages} | Tokens: ${usageData.usage.tokens.toLocaleString()}/${usageData.limits.tokens.toLocaleString()} | Uploads: ${usageData.usage.uploads}/${usageData.limits.uploads}`
+                    : "Loading usage..."
+                }
+              >
+                {usageLoading || usageError ? (
+                  <span>—</span>
+                ) : messagesRemaining !== null ? (
+                  <span>{messagesRemaining} msgs left</span>
+                ) : null}
+              </div>
             </div>
 
             {/* Send button */}
             <button
               type="submit"
-              disabled={!message.trim() || isLoading || isStreaming}
+              disabled={!message.trim() || isLoading || isStreaming || usageExhausted}
               className={cn(
                 "p-1.5 rounded-md transition-colors",
                 message.trim() && !isLoading && !isStreaming
