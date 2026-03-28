@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,12 +18,69 @@ interface ContactDialogProps {
   userEmail: string;
 }
 
+type TopicTemplate = {
+  label: string;
+  subject: string;
+  message: string;
+};
+
+const TOPIC_TEMPLATES: Record<string, TopicTemplate> = {
+  upgrade: {
+    label: "Upgrade to Pro",
+    subject: "Upgrade to Pro Plan",
+    message:
+      "Hi, I'd like to upgrade my ReddiChat account to the Pro plan.\n\nCurrent email: {userEmail}\n\nPlease let me know the next steps.",
+  },
+  billing: {
+    label: "Billing Question",
+    subject: "Billing Question",
+    message: "Hi, I have a question about billing:\n\n",
+  },
+  issue: {
+    label: "Report Issue",
+    subject: "Bug Report",
+    message:
+      "Hi, I'd like to report an issue:\n\n**What happened:**\n\n**What I expected:**\n\n**Steps to reproduce:**\n",
+  },
+  feature: {
+    label: "Feature Request",
+    subject: "Feature Request",
+    message:
+      "Hi, I'd like to suggest a feature:\n\n**Feature:**\n\n**Why it would be useful:**\n",
+  },
+  other: {
+    label: "Other",
+    subject: "General Inquiry",
+    message: "",
+  },
+};
+
 export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [subject, setSubject] = useState("Billing Inquiry — ReddiChat");
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [selectedChip, setSelectedChip] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleChipSelect = (key: string) => {
+    const t = TOPIC_TEMPLATES[key];
+    setSelectedChip(key);
+    setSubject(t.subject);
+    setMessage(
+      key === "upgrade"
+        ? t.message.replace("{userEmail}", userEmail)
+        : t.message
+    );
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const len = textareaRef.current.value.length;
+        textareaRef.current.setSelectionRange(len, len);
+      }
+    }, 0);
+  };
 
   const handleSend = async () => {
     if (!subject.trim() || !message.trim()) {
@@ -57,6 +114,7 @@ export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogPr
       toast.success("Message sent! We'll get back to you soon.");
       setSubject("Billing Inquiry — ReddiChat");
       setMessage("");
+      setSelectedChip(null);
       onOpenChange(false);
     } catch {
       toast.error("Failed to send message. Please try again.");
@@ -69,6 +127,7 @@ export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogPr
     if (!isOpen) {
       setSubject("Billing Inquiry — ReddiChat");
       setMessage("");
+      setSelectedChip(null);
     }
     onOpenChange(isOpen);
   };
@@ -86,9 +145,30 @@ export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogPr
             Contact Us
           </DialogTitle>
           <DialogDescription className={isDark ? "text-gray-400" : "text-gray-500"}>
-            Send us a message and we'll get back to you.
+            Select a topic or write a custom message.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Topic Chips */}
+        <div className="flex flex-wrap gap-2 pt-1 pb-2">
+          {Object.entries(TOPIC_TEMPLATES).map(([key, t]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => handleChipSelect(key)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors duration-150",
+                selectedChip === key
+                  ? "bg-purple-600 text-white border border-purple-600"
+                  : isDark
+                    ? "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-transparent"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
         <div className="space-y-4 pt-2">
           {/* Email (read-only) */}
@@ -138,6 +218,7 @@ export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogPr
               Message
             </label>
             <textarea
+              ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={2000}
