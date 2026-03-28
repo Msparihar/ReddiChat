@@ -6,12 +6,26 @@ import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 import { RedditSource } from "./RedditSource";
 import { MarkdownRenderer } from "./MarkdownRenderer";
+import { Copy, Check } from "lucide-react";
+import toast from "react-hot-toast";
 
 export function MessageList() {
   const { messages, isLoading, isStreaming, currentTool } = useChatStore();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = async (content: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(messageId);
+      toast.success("Copied!");
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      toast.error("Failed to copy");
+    }
+  };
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -76,7 +90,7 @@ export function MessageList() {
             ) : (
               <div
                 className={cn(
-                  "px-4 py-6",
+                  "px-4 py-6 group",
                   isDark ? "bg-gray-950" : "bg-white",
                   message.isError && "bg-red-50 border-l-4 border-red-400"
                 )}
@@ -117,6 +131,22 @@ export function MessageList() {
                         isDark ? "text-gray-500" : "text-gray-400"
                       )}
                     >
+                      <button
+                        onClick={() => handleCopy(message.content, message.id)}
+                        className={cn(
+                          "p-1 rounded transition-colors",
+                          isDark ? "hover:bg-gray-800 text-gray-500" : "hover:bg-gray-100 text-gray-400",
+                          "md:opacity-0 md:group-hover:opacity-100"
+                        )}
+                        title="Copy message"
+                        aria-label="Copy message"
+                      >
+                        {copiedId === message.id ? (
+                          <Check className="w-3.5 h-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
                       <span>
                         {message.timestamp.toLocaleTimeString([], {
                           hour: "2-digit",

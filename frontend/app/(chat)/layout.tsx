@@ -51,7 +51,7 @@ export default function ChatLayout({
       <main
         className={cn(
           "flex-1 transition-all duration-300",
-          isSidebarOpen ? "ml-60" : "ml-16"
+          isSidebarOpen ? "md:ml-60 ml-0" : "md:ml-16 ml-0"
         )}
       >
         {children}

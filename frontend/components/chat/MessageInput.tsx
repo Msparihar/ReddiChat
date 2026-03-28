@@ -245,7 +245,7 @@ export function MessageInput() {
                 <DropdownMenuContent
                   align="start"
                   className={cn(
-                    "min-w-[12rem]",
+                    "min-w-[12rem] max-sm:min-w-[calc(100vw-2rem)]",
                     isDark
                       ? "bg-gray-900 border-gray-700"
                       : "bg-white border-gray-200"
@@ -303,7 +303,7 @@ export function MessageInput() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
-                  "p-1.5 rounded-md transition-colors",
+                  "p-1.5 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
                   isDark
                     ? "text-gray-400 hover:bg-gray-800"
                     : "text-gray-500 hover:bg-gray-100"
@@ -343,7 +343,7 @@ export function MessageInput() {
               type="submit"
               disabled={!message.trim() || isLoading || isStreaming || usageExhausted}
               className={cn(
-                "p-1.5 rounded-md transition-colors",
+                "p-1.5 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
                 message.trim() && !isLoading && !isStreaming
                   ? "bg-purple-600 hover:bg-purple-700 text-white"
                   : isDark

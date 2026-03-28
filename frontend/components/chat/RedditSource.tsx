@@ -37,7 +37,7 @@ export function RedditSource({ source }: RedditSourceProps) {
 
   return (
     <div className="bg-gray-750 border border-gray-600 rounded-lg p-3 hover:bg-gray-700 transition-colors">
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium text-gray-200 line-clamp-2 mb-1">
             <a
@@ -58,7 +58,7 @@ export function RedditSource({ source }: RedditSourceProps) {
             <span>{source.created_utc}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-xs text-gray-400 ml-3">
+        <div className="flex items-center gap-3 text-xs text-gray-400 sm:ml-3">
           <div className="flex items-center gap-1">
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path
