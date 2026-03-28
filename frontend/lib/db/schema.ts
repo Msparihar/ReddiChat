@@ -10,6 +10,7 @@ import {
   integer,
   uniqueIndex,
   index,
+  date,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -155,6 +156,21 @@ export const userSearches = pgTable(
     ),
   ]
 );
+
+// Usage tracking table
+export const usageTracking = pgTable("usage_tracking", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  messageCount: integer("message_count").default(0).notNull(),
+  estimatedTokens: bigint("estimated_tokens", { mode: "number" }).default(0).notNull(),
+  uploadCount: integer("upload_count").default(0).notNull(),
+  uploadBytes: bigint("upload_bytes", { mode: "number" }).default(0).notNull(),
+}, (table) => [
+  uniqueIndex("usage_tracking_user_date_idx").on(table.userId, table.date),
+]);
+
+export type UsageTracking = typeof usageTracking.$inferSelect;
 
 // Relations
 export const conversationsRelations = relations(conversations, ({ many }) => ({

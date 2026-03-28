@@ -45,8 +45,9 @@ Reddit-powered AI chat application with social authentication and multi-model su
 |---|---|---|
 | v1.0.0 | Initial release — Reddit AI chat, auth, streaming | Shipped |
 | v1.1.0 | Multi-model support (Gemini + OpenAI) | Shipped |
-| v1.2.0 | Production hardening — rate limiting, validation, DB optimization | Next |
-| v1.3.0 | UX polish — mobile, copy, search, export, keyboard shortcuts | Planned |
+| v1.2.0 | Production hardening — rate limiting, validation, DB optimization | Shipped |
+| v1.3.0 | Security & cost protection — logging, daily limits, token budgets, file hardening | Next |
+| v1.4.0 | UX polish — mobile, copy, search, export, keyboard shortcuts | Planned |
 | v2.0.0 | Community Intelligence — sentiment, trending, TLDR, subreddit pages | Planned |
 | v2.1.0 | Monetization — tiered access, Stripe billing, public API | Planned |
 

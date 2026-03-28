@@ -1,3 +1,9 @@
+import crypto from "crypto";
+
+export function generateRequestId(): string {
+  return crypto.randomUUID();
+}
+
 type LogLevel = "info" | "warn" | "error" | "debug";
 
 interface LogContext {
@@ -43,9 +49,11 @@ export function withRequestLogging(
   fn: () => Promise<Response>
 ): Promise<Response> {
   const start = Date.now();
+  const requestId = generateRequestId();
   return fn().then(
     (response) => {
       logger.info("Request completed", {
+        requestId,
         endpoint,
         userId,
         duration: Date.now() - start,
@@ -55,6 +63,7 @@ export function withRequestLogging(
     },
     (error) => {
       logger.error("Request failed", {
+        requestId,
         endpoint,
         userId,
         duration: Date.now() - start,

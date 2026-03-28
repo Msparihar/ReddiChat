@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { chatMessageSchema } from "@/lib/validation";
+import { chatMessageSchema, validateFileUpload, sanitizeFilename, ALLOWED_MIME_TYPES, MAX_FILES_PER_REQUEST, MAX_TOTAL_REQUEST_SIZE } from "@/lib/validation";
 import { db } from "@/lib/db";
 import {
   conversations,
@@ -14,7 +14,10 @@ import { ModelMessage } from "ai";
 import { streamChatResponse, extractSources } from "@/lib/ai/agent";
 import { eq, asc } from "drizzle-orm";
 import { uploadToS3, getFileType } from "@/lib/s3";
-import { logger } from "@/lib/logger";
+import { logger, generateRequestId } from "@/lib/logger";
+import { checkDailyLimit, trackMessageUsage, trackUploadUsage } from "@/lib/usage";
+import { truncateHistory, estimateMessageTokens } from "@/lib/token-budget";
+import { sanitizeError } from "@/lib/error-handler";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +27,9 @@ function createSSEMessage(data: any): string {
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -43,8 +49,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rateLimit = checkRateLimit(`chat:${session.user.id}`, RATE_LIMITS.chat);
+    const userId = session.user.id;
+
+    // Hourly rate limit
+    const rateLimit = checkRateLimit(`chat:${userId}`, RATE_LIMITS.chat);
     if (!rateLimit.success) {
+      logger.warn("Rate limit exceeded", { requestId, userId, endpoint: "/api/chat/stream", remaining: rateLimit.remaining });
       return new Response(
         createSSEMessage({ type: "error", content: "Rate limit exceeded. Please try again later." }),
         {
@@ -57,12 +67,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Daily usage limit
+    const dailyCheck = await checkDailyLimit(userId, "message");
+    if (!dailyCheck.allowed) {
+      logger.warn("Daily limit exceeded", { requestId, userId, reason: dailyCheck.reason, current: dailyCheck.current, limit: dailyCheck.limit });
+      return new Response(
+        createSSEMessage({ type: "error", content: dailyCheck.reason || "Daily limit reached." }),
+        {
+          status: 429,
+          headers: { "Content-Type": "text/event-stream" },
+        }
+      );
+    }
+
     const formData = await request.formData();
     const message = formData.get("message") as string;
     const conversationId = formData.get("conversation_id") as string | null;
     const modelId = formData.get("model") as string | null;
     const files = formData.getAll("files") as File[];
 
+    // Input validation
     const validation = chatMessageSchema.safeParse({
       message,
       conversationId,
@@ -79,25 +103,82 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Process file uploads
+    // File count limit
+    if (files.length > MAX_FILES_PER_REQUEST) {
+      return new Response(
+        createSSEMessage({ type: "error", content: `Maximum ${MAX_FILES_PER_REQUEST} files per request.` }),
+        {
+          status: 400,
+          headers: { "Content-Type": "text/event-stream" },
+        }
+      );
+    }
+
+    // Total request size check
+    const totalFileSize = files.reduce((sum, f) => sum + f.size, 0);
+    if (totalFileSize > MAX_TOTAL_REQUEST_SIZE) {
+      return new Response(
+        createSSEMessage({ type: "error", content: "Total upload size exceeds 50MB limit." }),
+        {
+          status: 413,
+          headers: { "Content-Type": "text/event-stream" },
+        }
+      );
+    }
+
+    // Daily upload limit check
+    if (files.length > 0) {
+      const uploadCheck = await checkDailyLimit(userId, "upload");
+      if (!uploadCheck.allowed) {
+        logger.warn("Daily upload limit exceeded", { requestId, userId, reason: uploadCheck.reason });
+        return new Response(
+          createSSEMessage({ type: "error", content: uploadCheck.reason || "Daily upload limit reached." }),
+          {
+            status: 429,
+            headers: { "Content-Type": "text/event-stream" },
+          }
+        );
+      }
+    }
+
+    logger.info("Chat request started", {
+      requestId,
+      userId,
+      endpoint: "/api/chat/stream",
+      model: modelId || "default",
+      messageLength: message.length,
+      fileCount: files.length,
+      totalFileSize,
+      conversationId: conversationId || "new",
+    });
+
+    // Process file uploads with validation
     const uploadedFiles: any[] = [];
     for (const file of files) {
-      if (file.size > 10 * 1024 * 1024) continue; // Skip files > 10MB
-
       const buffer = Buffer.from(await file.arrayBuffer());
+
+      // Validate file content
+      const fileValidation = validateFileUpload(file, buffer);
+      if (!fileValidation.valid) {
+        logger.warn("File rejected", { requestId, userId, filename: file.name, reason: fileValidation.error });
+        continue; // Skip invalid files
+      }
+
+      const safeName = sanitizeFilename(file.name);
+
       const result = await uploadToS3(
         buffer,
-        file.name,
+        safeName,
         file.type,
-        session.user.id
+        userId
       );
 
       const [attachment] = await db
         .insert(fileAttachments)
         .values({
-          userId: session.user.id,
+          userId,
           filename: result.filename,
-          originalFilename: file.name,
+          originalFilename: safeName,
           fileType: getFileType(file.type),
           fileSize: result.fileSize,
           mimeType: file.type,
@@ -109,6 +190,12 @@ export async function POST(request: NextRequest) {
         .returning();
 
       uploadedFiles.push(attachment);
+      logger.info("File uploaded", { requestId, userId, filename: safeName, size: result.fileSize, mimeType: file.type });
+    }
+
+    // Track upload usage
+    if (uploadedFiles.length > 0) {
+      await trackUploadUsage(userId, uploadedFiles.length, totalFileSize);
     }
 
     // Get or create conversation
@@ -119,7 +206,7 @@ export async function POST(request: NextRequest) {
       const [newConv] = await db
         .insert(conversations)
         .values({
-          userId: session.user.id,
+          userId,
           title,
         })
         .returning();
@@ -131,7 +218,7 @@ export async function POST(request: NextRequest) {
       .insert(messages)
       .values({
         conversationId: convId,
-        userId: session.user.id,
+        userId,
         content: message,
         role: "user",
         hasAttachments: uploadedFiles.length > 0,
@@ -155,13 +242,23 @@ export async function POST(request: NextRequest) {
       .limit(20);
 
     // Build messages array for AI (filter out empty messages)
-    const aiMessages: ModelMessage[] = history
+    const rawHistoryMessages = history
       .slice(0, -1)
       .filter((msg) => msg.content && msg.content.trim() !== "")
       .map((msg) => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
       }));
+
+    // Token budgeting — truncate history if needed
+    const imageCount = uploadedFiles.filter((f) => f.mimeType?.startsWith("image/")).length;
+    const currentMessageTokens = estimateMessageTokens(message, imageCount);
+    const truncated = truncateHistory(rawHistoryMessages, currentMessageTokens, requestId);
+
+    const aiMessages: ModelMessage[] = truncated.messages.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    }));
 
     // Add current message with any image attachments
     const currentMessageContent: any[] = [{ type: "text", text: message }];
@@ -180,6 +277,9 @@ export async function POST(request: NextRequest) {
         currentMessageContent.length > 1 ? currentMessageContent : message,
     });
 
+    // Track message usage with estimated tokens
+    await trackMessageUsage(userId, truncated.totalEstimatedTokens);
+
     // Create readable stream for SSE
     const encoder = new TextEncoder();
 
@@ -196,6 +296,7 @@ export async function POST(request: NextRequest) {
             modelId: modelId || undefined,
             onToolStart: (name) => {
               toolUsed = name;
+              logger.info("Tool invoked", { requestId, userId, tool: name });
               controller.enqueue(
                 encoder.encode(
                   createSSEMessage({ type: "tool_start", tool: name })
@@ -203,6 +304,7 @@ export async function POST(request: NextRequest) {
               );
             },
             onToolEnd: (name, toolResult) => {
+              logger.info("Tool completed", { requestId, userId, tool: name });
               controller.enqueue(
                 encoder.encode(
                   createSSEMessage({ type: "tool_end", tool: name })
@@ -244,7 +346,7 @@ export async function POST(request: NextRequest) {
             .insert(messages)
             .values({
               conversationId: convId,
-              userId: session.user.id,
+              userId,
               content: fullContent,
               role: "assistant",
               sources: allSources.length > 0 ? allSources : null,
@@ -282,14 +384,30 @@ export async function POST(request: NextRequest) {
             )
           );
 
+          const duration = Date.now() - startTime;
+          logger.info("Chat request completed", {
+            requestId,
+            userId,
+            model: modelId || "default",
+            inputChars: message.length,
+            responseChars: fullContent.length,
+            estimatedTokens: truncated.totalEstimatedTokens,
+            historyMessages: truncated.messages.length,
+            historyDropped: truncated.messagesDropped,
+            toolUsed,
+            sourceCount: allSources.length,
+            fileCount: uploadedFiles.length,
+            duration,
+          });
+
           controller.close();
         } catch (error: any) {
-          logger.error("Stream error", { error: error.message });
+          const sanitized = sanitizeError(error, requestId);
           controller.enqueue(
             encoder.encode(
               createSSEMessage({
                 type: "error",
-                content: error.message || "An error occurred",
+                content: sanitized.message,
               })
             )
           );
@@ -307,11 +425,11 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    logger.error("Chat stream error", { error: error.message });
+    const sanitized = sanitizeError(error, requestId);
     return new Response(
       createSSEMessage({
         type: "error",
-        content: error.message || "Failed to process request",
+        content: sanitized.message,
       }),
       {
         status: 500,

@@ -13,6 +13,7 @@ export async function GET(
 ) {
   try {
     const { username } = await params;
+    logger.info("Reddit user comments request", { endpoint: `/api/reddit/user/${username}/comments`, username });
 
     // Validate username
     const usernameValidation = redditUsernameSchema.safeParse(username);
