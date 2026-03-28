@@ -23,6 +23,7 @@ export const user = pgTable("user", {
   image: text("image"),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
+  role: varchar("role", { length: 20 }).default("free").notNull(),
 });
 
 export const session = pgTable("session", {

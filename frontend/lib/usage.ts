@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { usageTracking } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { getTierLimits, UserRole } from "@/lib/tiers";
 
 export interface UsageLimits {
   maxMessagesPerDay: number;
@@ -10,12 +11,7 @@ export interface UsageLimits {
   maxUploadBytesPerDay: number;
 }
 
-export const DEFAULT_LIMITS: UsageLimits = {
-  maxMessagesPerDay: 100,
-  maxTokensPerDay: 500000,
-  maxUploadsPerDay: 50,
-  maxUploadBytesPerDay: 100 * 1024 * 1024, // 100MB
-};
+export const DEFAULT_LIMITS: UsageLimits = getTierLimits("free");
 
 function getTodayDate(): string {
   return new Date().toISOString().split("T")[0]; // "2026-03-28"
@@ -50,44 +46,55 @@ function formatBytes(bytes: number): string {
 export async function checkDailyLimit(
   userId: string,
   type: "message" | "upload",
-  limits: UsageLimits = DEFAULT_LIMITS
+  limits?: UsageLimits,
+  role: UserRole = "free"
 ): Promise<{ allowed: boolean; reason?: string; current?: number; limit?: number }> {
+  const effectiveLimits = limits || getTierLimits(role);
+
+  // Admin/unlimited tier — skip checks
+  if (effectiveLimits.maxMessagesPerDay === Infinity && type === "message") {
+    return { allowed: true };
+  }
+  if (effectiveLimits.maxUploadsPerDay === Infinity && type === "upload") {
+    return { allowed: true };
+  }
+
   const usage = await getDailyUsage(userId);
 
   if (type === "message") {
-    if (usage.messageCount >= limits.maxMessagesPerDay) {
+    if (usage.messageCount >= effectiveLimits.maxMessagesPerDay) {
       return {
         allowed: false,
-        reason: `You've used ${usage.messageCount}/${limits.maxMessagesPerDay} messages today. Resets at midnight UTC.`,
+        reason: `You've used ${usage.messageCount}/${effectiveLimits.maxMessagesPerDay} messages today. Resets at midnight UTC.`,
         current: usage.messageCount,
-        limit: limits.maxMessagesPerDay,
+        limit: effectiveLimits.maxMessagesPerDay,
       };
     }
-    if (usage.estimatedTokens >= limits.maxTokensPerDay) {
+    if (usage.estimatedTokens >= effectiveLimits.maxTokensPerDay) {
       return {
         allowed: false,
-        reason: `You've used ${usage.estimatedTokens.toLocaleString()}/${limits.maxTokensPerDay.toLocaleString()} tokens today. Resets at midnight UTC.`,
+        reason: `You've used ${usage.estimatedTokens.toLocaleString()}/${effectiveLimits.maxTokensPerDay.toLocaleString()} tokens today. Resets at midnight UTC.`,
         current: usage.estimatedTokens,
-        limit: limits.maxTokensPerDay,
+        limit: effectiveLimits.maxTokensPerDay,
       };
     }
   }
 
   if (type === "upload") {
-    if (usage.uploadCount >= limits.maxUploadsPerDay) {
+    if (usage.uploadCount >= effectiveLimits.maxUploadsPerDay) {
       return {
         allowed: false,
-        reason: `You've used ${usage.uploadCount}/${limits.maxUploadsPerDay} uploads today. Resets at midnight UTC.`,
+        reason: `You've used ${usage.uploadCount}/${effectiveLimits.maxUploadsPerDay} uploads today. Resets at midnight UTC.`,
         current: usage.uploadCount,
-        limit: limits.maxUploadsPerDay,
+        limit: effectiveLimits.maxUploadsPerDay,
       };
     }
-    if (usage.uploadBytes >= limits.maxUploadBytesPerDay) {
+    if (usage.uploadBytes >= effectiveLimits.maxUploadBytesPerDay) {
       return {
         allowed: false,
-        reason: `You've used ${formatBytes(usage.uploadBytes)}/${formatBytes(limits.maxUploadBytesPerDay)} of daily upload quota. Resets at midnight UTC.`,
+        reason: `You've used ${formatBytes(usage.uploadBytes)}/${formatBytes(effectiveLimits.maxUploadBytesPerDay)} of daily upload quota. Resets at midnight UTC.`,
         current: usage.uploadBytes,
-        limit: limits.maxUploadBytesPerDay,
+        limit: effectiveLimits.maxUploadBytesPerDay,
       };
     }
   }

@@ -192,9 +192,12 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
         {/* Plan Badge */}
         <div className="px-3 py-2">
           <div className="flex items-center gap-2">
-            <Crown className={cn("w-3.5 h-3.5", isDark ? "text-amber-400" : "text-amber-500")} />
+            <Crown className={cn("w-3.5 h-3.5", usageData?.role === "admin" ? "text-amber-400" : isDark ? "text-amber-400" : "text-amber-500")} />
             <span className={cn("text-xs font-medium", isDark ? "text-gray-300" : "text-gray-600")}>
-              Free Plan — 100 msgs/day
+              {usageData?.role === "admin" ? "Admin" :
+               usageData?.role === "team" ? "Team Plan" :
+               usageData?.role === "pro" ? "Pro Plan" :
+               "Free Plan"} — {usageData ? `${usageData.limits.messages === Infinity ? "Unlimited" : usageData.limits.messages} msgs/day` : "100 msgs/day"}
             </span>
           </div>
         </div>

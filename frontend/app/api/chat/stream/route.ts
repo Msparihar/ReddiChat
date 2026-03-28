@@ -16,6 +16,7 @@ import { eq, asc } from "drizzle-orm";
 import { uploadToS3, getFileType } from "@/lib/s3";
 import { logger, generateRequestId } from "@/lib/logger";
 import { checkDailyLimit, trackMessageUsage, trackUploadUsage } from "@/lib/usage";
+import { getTierLimits, isModelAllowed, UserRole } from "@/lib/tiers";
 import { truncateHistory, estimateMessageTokens } from "@/lib/token-budget";
 import { sanitizeError } from "@/lib/error-handler";
 
@@ -50,6 +51,8 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = session.user.id;
+    const userRole = ((session.user as any).role || "free") as UserRole;
+    const tierLimits = getTierLimits(userRole);
 
     // Hourly rate limit
     const rateLimit = checkRateLimit(`chat:${userId}`, RATE_LIMITS.chat);
@@ -68,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Daily usage limit
-    const dailyCheck = await checkDailyLimit(userId, "message");
+    const dailyCheck = await checkDailyLimit(userId, "message", tierLimits);
     if (!dailyCheck.allowed) {
       logger.warn("Daily limit exceeded", { requestId, userId, reason: dailyCheck.reason, current: dailyCheck.current, limit: dailyCheck.limit });
       return new Response(
@@ -103,6 +106,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Model access check
+    if (modelId && !isModelAllowed(userRole, modelId)) {
+      return new Response(
+        createSSEMessage({ type: "error", content: "Your plan does not include access to this model. Upgrade to Pro to unlock all models." }),
+        {
+          status: 403,
+          headers: { "Content-Type": "text/event-stream" },
+        }
+      );
+    }
+
     // File count limit
     if (files.length > MAX_FILES_PER_REQUEST) {
       return new Response(
@@ -128,7 +142,7 @@ export async function POST(request: NextRequest) {
 
     // Daily upload limit check
     if (files.length > 0) {
-      const uploadCheck = await checkDailyLimit(userId, "upload");
+      const uploadCheck = await checkDailyLimit(userId, "upload", tierLimits);
       if (!uploadCheck.allowed) {
         logger.warn("Daily upload limit exceeded", { requestId, userId, reason: uploadCheck.reason });
         return new Response(

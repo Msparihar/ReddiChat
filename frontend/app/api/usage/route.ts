@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { getDailyUsage, DEFAULT_LIMITS } from "@/lib/usage";
+import { getDailyUsage } from "@/lib/usage";
+import { getTierLimits, UserRole } from "@/lib/tiers";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { logger, generateRequestId } from "@/lib/logger";
 
@@ -18,6 +19,8 @@ export async function GET() {
     }
 
     const userId = session.user.id;
+    const userRole = ((session.user as any).role || "free") as UserRole;
+    const tierLimits = getTierLimits(userRole);
 
     const rateLimit = checkRateLimit(`usage:${userId}`, RATE_LIMITS.reddit);
     if (!rateLimit.success) {
@@ -40,11 +43,12 @@ export async function GET() {
         uploadBytes: usage.uploadBytes,
       },
       limits: {
-        messages: DEFAULT_LIMITS.maxMessagesPerDay,
-        tokens: DEFAULT_LIMITS.maxTokensPerDay,
-        uploads: DEFAULT_LIMITS.maxUploadsPerDay,
-        uploadBytes: DEFAULT_LIMITS.maxUploadBytesPerDay,
+        messages: tierLimits.maxMessagesPerDay,
+        tokens: tierLimits.maxTokensPerDay,
+        uploads: tierLimits.maxUploadsPerDay,
+        uploadBytes: tierLimits.maxUploadBytesPerDay,
       },
+      role: userRole,
       resetAt,
     });
   } catch (error) {

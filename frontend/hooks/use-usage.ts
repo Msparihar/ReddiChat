@@ -16,6 +16,7 @@ interface UsageData {
     uploadBytes: number;
   };
   resetAt: string;
+  role: string;
 }
 
 export function useUsage() {
