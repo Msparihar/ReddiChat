@@ -4,7 +4,7 @@
 Reddit-powered AI chat application with social authentication and multi-model support.
 
 ## Current Version
-**v1.1.0** — Multi-model support (Gemini + OpenAI)
+**v2.0.0** — Community Intelligence
 
 ## Architecture
 - **Frontend only** — No backend; Next.js App Router handles API routes
@@ -53,8 +53,8 @@ Reddit-powered AI chat application with social authentication and multi-model su
 | v1.4.2 | Quick topic chips in contact dialog | Shipped |
 | v1.5.0 | Search, export, streaming phases, keyboard shortcuts, error UI, accessibility | Shipped |
 | v1.6.0 | User roles & tier-based access control | Shipped |
-| v1.7.0 | Design system overhaul — Orangered brand, Apple shadows, warm tokens | In Progress |
-| v2.0.0 | Community Intelligence — sentiment, trending, TLDR, subreddit pages | Planned |
+| v1.7.0 | Design system overhaul — Orangered brand, Apple shadows, warm tokens | Shipped |
+| v2.0.0 | Community Intelligence — sentiment, trending, TLDR, subreddit pages | Shipped |
 | v2.1.0 | Monetization — Stripe billing on top of v1.6.0 tiers | Planned |
 
 ## Notes
