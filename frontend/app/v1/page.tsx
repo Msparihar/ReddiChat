@@ -84,14 +84,14 @@ export default function V1DarkCinematic() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
           isScrolled
-            ? "bg-black/80 backdrop-blur-xl border-b border-white/5 shadow-2xl shadow-orange-500/5"
+            ? "bg-black/80 backdrop-blur-xl border-b border-white/5 shadow-2xl shadow-brand/5"
             : "bg-transparent"
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3 group">
-              <div className="relative p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg group-hover:shadow-lg group-hover:shadow-orange-500/30 transition-all duration-300">
+              <div className="relative p-2 bg-gradient-to-br from-brand to-brand-hover rounded-lg group-hover:shadow-lg group-hover:shadow-brand/30 transition-all duration-300">
                 <Bot size={22} className="text-white" />
               </div>
               <span className="text-lg font-outfit font-bold text-white tracking-tight">
@@ -111,7 +111,7 @@ export default function V1DarkCinematic() {
                   className="relative text-gray-400 hover:text-white transition-colors duration-300 text-sm tracking-wide uppercase group py-2"
                 >
                   {item}
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gradient-to-r from-orange-500 to-red-500 group-hover:w-full transition-all duration-300" />
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gradient-to-r from-brand to-brand-hover group-hover:w-full transition-all duration-300" />
                 </button>
               ))}
               <button
@@ -120,7 +120,7 @@ export default function V1DarkCinematic() {
               >
                 <User size={14} />
                 Lookup
-                <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gradient-to-r from-orange-500 to-red-500 group-hover:w-full transition-all duration-300" />
+                <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-gradient-to-r from-brand to-brand-hover group-hover:w-full transition-all duration-300" />
               </button>
             </nav>
 
@@ -137,8 +137,8 @@ export default function V1DarkCinematic() {
                 onClick={handleGetStarted}
                 className="group relative px-6 py-2 rounded-lg font-medium text-sm overflow-hidden cursor-pointer"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 group-hover:opacity-90" />
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-orange-400 to-red-500" />
+                <div className="absolute inset-0 bg-gradient-to-r from-brand to-brand-hover transition-all duration-300 group-hover:opacity-90" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-brand to-brand-hover" />
                 <span className="relative z-10 text-white">
                   {isAuthenticated ? "Go to Chat" : "Get Started"}
                 </span>
@@ -190,7 +190,7 @@ export default function V1DarkCinematic() {
                       handleGetStarted();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg font-medium text-sm"
+                    className="w-full bg-gradient-to-r from-brand to-brand-hover text-white px-6 py-3 rounded-lg font-medium text-sm"
                   >
                     {isAuthenticated ? "Go to Chat" : "Get Started"}
                   </button>
@@ -209,7 +209,7 @@ export default function V1DarkCinematic() {
         {/* Spotlight effects */}
         <Spotlight
           className="-top-40 left-0 md:left-60 md:-top-20"
-          fill="#ff4500"
+          fill="var(--rc-brand)"
         />
         <Spotlight
           className="top-10 left-full -translate-x-[40%] md:-top-10"
@@ -217,7 +217,7 @@ export default function V1DarkCinematic() {
         />
 
         {/* Subtle radial glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/5 rounded-full blur-[120px] animate-glow-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand/5 rounded-full blur-[120px] animate-glow-pulse" />
 
         {/* Background beams */}
         <BackgroundBeams className="opacity-30" />
@@ -230,7 +230,7 @@ export default function V1DarkCinematic() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="inline-flex items-center space-x-2 bg-white/[0.03] border border-white/[0.06] rounded-full px-5 py-2 mb-10 backdrop-blur-sm"
           >
-            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
+            <div className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse" />
             <span className="text-xs text-gray-400 tracking-widest uppercase font-outfit">
               AI-powered Reddit insights
             </span>
@@ -243,7 +243,7 @@ export default function V1DarkCinematic() {
             className="font-outfit font-bold text-5xl sm:text-6xl lg:text-8xl text-white mb-8 leading-[0.95] tracking-tight"
           >
             Ask Reddit{" "}
-            <span className="bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand via-red-500 to-brand bg-clip-text text-transparent">
               Anything
             </span>
             <br />
@@ -269,7 +269,7 @@ export default function V1DarkCinematic() {
           >
             <button
               onClick={handleGetStarted}
-              className="group relative bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-4 rounded-xl font-outfit font-semibold text-base flex items-center gap-2 shadow-2xl shadow-orange-500/20 hover:shadow-orange-500/40 transition-all duration-500 cursor-pointer"
+              className="group relative bg-gradient-to-r from-brand to-brand-hover text-white px-8 py-4 rounded-xl font-outfit font-semibold text-base flex items-center gap-2 shadow-2xl shadow-brand/20 hover:shadow-brand/40 transition-all duration-500 cursor-pointer"
             >
               {isAuthenticated ? "Go to Chat" : "Start Chatting"}
               <ArrowRight
@@ -280,9 +280,9 @@ export default function V1DarkCinematic() {
 
             <button
               onClick={() => setShowUserLookup(true)}
-              className="group px-8 py-4 rounded-xl font-outfit font-semibold text-base text-white border border-white/10 hover:border-orange-500/30 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-500 backdrop-blur-sm flex items-center gap-2 cursor-pointer"
+              className="group px-8 py-4 rounded-xl font-outfit font-semibold text-base text-white border border-white/10 hover:border-brand/30 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-500 backdrop-blur-sm flex items-center gap-2 cursor-pointer"
             >
-              <User size={18} className="text-gray-400 group-hover:text-orange-400 transition-colors" />
+              <User size={18} className="text-gray-400 group-hover:text-brand transition-colors" />
               User Lookup
             </button>
           </motion.div>
@@ -295,7 +295,7 @@ export default function V1DarkCinematic() {
       {/* Features Section */}
       <section id="features" className="relative py-32 px-4 sm:px-6 lg:px-8">
         {/* Subtle top glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-px bg-gradient-to-r from-transparent via-brand/30 to-transparent" />
 
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -305,7 +305,7 @@ export default function V1DarkCinematic() {
             transition={{ duration: 0.6 }}
             className="text-center mb-20"
           >
-            <span className="text-xs text-orange-500 tracking-[0.3em] uppercase font-outfit mb-4 block">
+            <span className="text-xs text-brand tracking-[0.3em] uppercase font-outfit mb-4 block">
               Features
             </span>
             <h2 className="font-outfit font-bold text-3xl sm:text-4xl lg:text-5xl text-white mb-4">
@@ -324,14 +324,14 @@ export default function V1DarkCinematic() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.15 }}
-                className="group relative p-8 rounded-2xl border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.04] hover:border-orange-500/20 transition-all duration-500 cursor-default"
+                className="group relative p-8 rounded-2xl border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.04] hover:border-brand/20 transition-all duration-500 cursor-default"
               >
                 {/* Hover glow */}
-                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-b from-orange-500/5 to-transparent" />
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-b from-brand/5 to-transparent" />
 
                 <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/10 flex items-center justify-center mb-6 group-hover:border-orange-500/30 group-hover:shadow-lg group-hover:shadow-orange-500/10 transition-all duration-500">
-                    <feature.icon className="w-5 h-5 text-orange-400" />
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand/20 to-brand-hover/10 border border-brand/10 flex items-center justify-center mb-6 group-hover:border-brand/30 group-hover:shadow-lg group-hover:shadow-brand/10 transition-all duration-500">
+                    <feature.icon className="w-5 h-5 text-brand" />
                   </div>
                   <h3 className="font-outfit font-semibold text-xl text-white mb-3">
                     {feature.title}
@@ -351,7 +351,7 @@ export default function V1DarkCinematic() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="p-1.5 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg">
+              <div className="p-1.5 bg-gradient-to-br from-brand to-brand-hover rounded-lg">
                 <Bot size={16} className="text-white" />
               </div>
               <span className="font-outfit font-semibold text-white text-sm">
@@ -418,7 +418,7 @@ export default function V1DarkCinematic() {
                   }
                 }}
                 disabled={!userLookupInput.trim() || isLookingUp}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-3 rounded-lg font-outfit font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-brand to-brand-hover text-white px-4 py-3 rounded-lg font-outfit font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLookingUp ? (
                   <>

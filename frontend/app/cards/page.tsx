@@ -46,20 +46,20 @@ function Card1() {
         <div
           key={i}
           className={cn(
-            "group relative p-8 rounded-2xl bg-[#1c1c1c] border border-white/[0.04] transition-all duration-500 hover:border-[#ff4500]/30 hover:-translate-y-1",
+            "group relative p-8 rounded-2xl bg-[#1c1c1c] border border-white/[0.04] transition-all duration-500 hover:border-[var(--rc-brand)]/30 hover:-translate-y-1",
             i === 1 && "md:mt-12",
             i === 2 && "md:mt-24"
           )}
         >
-          <span className="font-syne text-[5rem] font-black text-white/[0.03] absolute top-4 right-6 leading-none select-none group-hover:text-[#ff4500]/[0.06] transition-colors duration-500">
+          <span className="font-syne text-[5rem] font-black text-white/[0.03] absolute top-4 right-6 leading-none select-none group-hover:text-[var(--rc-brand)]/[0.06] transition-colors duration-500">
             0{i + 1}
           </span>
-          <div className="w-12 h-12 rounded-xl bg-[#ff4500]/10 border border-[#ff4500]/20 flex items-center justify-center mb-6">
-            <f.icon size={22} className="text-[#ff4500]" />
+          <div className="w-12 h-12 rounded-xl bg-[var(--rc-brand)]/10 border border-[var(--rc-brand)]/20 flex items-center justify-center mb-6">
+            <f.icon size={22} className="text-[var(--rc-brand)]" />
           </div>
           <h3 className="font-syne text-xl font-bold text-[#f5f5f0] mb-3">{f.title}</h3>
           <p className="text-[#f5f5f0]/50 text-sm leading-relaxed">{f.description}</p>
-          <div className="mt-6 h-px w-10 bg-white/10 group-hover:w-full group-hover:bg-[#ff4500]/30 transition-all duration-500" />
+          <div className="mt-6 h-px w-10 bg-white/10 group-hover:w-full group-hover:bg-[var(--rc-brand)]/30 transition-all duration-500" />
         </div>
       ))}
     </div>
@@ -82,7 +82,7 @@ function Card2() {
             className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             style={{
               background:
-                "conic-gradient(from 0deg, #ff4500, #ff6b35, #ff8a65, #ffd4a8, #ff4500)",
+                "conic-gradient(from 0deg, var(--rc-brand), #ff6b35, #ff8a65, #ffd4a8, var(--rc-brand))",
               animation: "spin 3s linear infinite",
             }}
           />
@@ -93,10 +93,10 @@ function Card2() {
 
           <div className="relative z-10 p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#ff4500] to-[#ff6b35] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--rc-brand)] to-[#ff6b35] flex items-center justify-center">
                 <f.icon size={18} className="text-white" />
               </div>
-              <span className="text-[10px] tracking-[0.25em] uppercase text-[#ff4500]/60 font-medium">
+              <span className="text-[10px] tracking-[0.25em] uppercase text-[var(--rc-brand)]/60 font-medium">
                 {f.tag}
               </span>
             </div>
@@ -155,8 +155,8 @@ function Card3() {
             <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white/[0.03] to-transparent" style={{ transform: "translateZ(20px)" }} />
 
             <div className="mb-8" style={{ transform: "translateZ(30px)" }}>
-              <div className="w-16 h-16 rounded-2xl bg-[#ff4500]/10 flex items-center justify-center mb-6 border border-[#ff4500]/10">
-                <f.icon size={28} className="text-[#ff4500]" />
+              <div className="w-16 h-16 rounded-2xl bg-[var(--rc-brand)]/10 flex items-center justify-center mb-6 border border-[var(--rc-brand)]/10">
+                <f.icon size={28} className="text-[var(--rc-brand)]" />
               </div>
             </div>
             <h3 className="text-xl font-bold text-white mb-3" style={{ transform: "translateZ(25px)" }}>{f.title}</h3>
@@ -180,19 +180,19 @@ function Card4() {
           className="group flex rounded-2xl overflow-hidden bg-[#0e0e0e] border border-white/[0.04] hover:border-white/[0.08] transition-all duration-500"
         >
           {/* Left accent */}
-          <div className="w-1.5 bg-gradient-to-b from-[#ff4500] to-[#ff6b35] group-hover:w-2 transition-all duration-500 shrink-0" />
+          <div className="w-1.5 bg-gradient-to-b from-[var(--rc-brand)] to-[#ff6b35] group-hover:w-2 transition-all duration-500 shrink-0" />
 
           <div className="p-7 flex flex-col">
             <div className="flex items-center justify-between mb-5">
-              <f.icon size={20} className="text-[#ff4500]" />
+              <f.icon size={20} className="text-[var(--rc-brand)]" />
               <ArrowUpRight
                 size={16}
-                className="text-white/20 group-hover:text-[#ff4500] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300"
+                className="text-white/20 group-hover:text-[var(--rc-brand)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300"
               />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">{f.title}</h3>
             <p className="text-white/40 text-sm leading-relaxed flex-1">{f.description}</p>
-            <div className="mt-5 text-xs text-[#ff4500]/50 tracking-widest uppercase font-medium">
+            <div className="mt-5 text-xs text-[var(--rc-brand)]/50 tracking-widest uppercase font-medium">
               0{i + 1}
             </div>
           </div>
@@ -211,11 +211,11 @@ function Card5() {
       {features.map((f, i) => (
         <div
           key={i}
-          className="group rounded-xl overflow-hidden border border-white/[0.06] bg-[#0c0c0c] hover:border-[#ff4500]/20 transition-all duration-500"
+          className="group rounded-xl overflow-hidden border border-white/[0.06] bg-[#0c0c0c] hover:border-[var(--rc-brand)]/20 transition-all duration-500"
         >
           {/* Terminal header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.04] bg-white/[0.02]">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#ff4500]/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[var(--rc-brand)]/60" />
             <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
             <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
             <span className="ml-2 text-[10px] text-white/30 font-mono">{f.tag.toLowerCase()}.ts</span>
@@ -224,7 +224,7 @@ function Card5() {
           <div className="p-6 font-mono">
             <div className="text-white/20 text-xs mb-1">{"// "}{f.title}</div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-[#ff4500] text-xs">export</span>
+              <span className="text-[var(--rc-brand)] text-xs">export</span>
               <span className="text-[#ff8a65] text-xs">function</span>
               <span className="text-white text-xs">{f.title.replace(/\s/g, "")}()</span>
               <span className="text-white/30 text-xs">{"{"}</span>
@@ -234,7 +234,7 @@ function Card5() {
             </p>
             <div className="text-white/30 text-xs mt-4">{"}"}</div>
 
-            <div className="mt-4 flex items-center gap-1.5 text-[#ff4500]/40 group-hover:text-[#ff4500]/70 transition-colors">
+            <div className="mt-4 flex items-center gap-1.5 text-[var(--rc-brand)]/40 group-hover:text-[var(--rc-brand)]/70 transition-colors">
               <Terminal size={12} />
               <span className="text-[10px] tracking-wider uppercase">Active</span>
               <span className="w-1.5 h-1.5 bg-green-500/60 rounded-full animate-pulse ml-1" />
@@ -287,10 +287,10 @@ function Card6() {
       {features.map((f, i) => (
         <SpotlightCard key={i}>
           <div className="relative z-10 p-8">
-            <f.icon size={24} className="text-[#ff4500] mb-6" />
+            <f.icon size={24} className="text-[var(--rc-brand)] mb-6" />
             <h3 className="text-xl font-bold text-white mb-3">{f.title}</h3>
             <p className="text-white/40 text-sm leading-relaxed">{f.description}</p>
-            <div className="mt-6 flex items-center gap-1 text-[#ff4500]/60 text-xs font-medium">
+            <div className="mt-6 flex items-center gap-1 text-[var(--rc-brand)]/60 text-xs font-medium">
               Learn more <ChevronRight size={12} />
             </div>
           </div>
@@ -309,19 +309,19 @@ function Card7() {
       {features.map((f, i) => (
         <div
           key={i}
-          className="group relative p-8 rounded-3xl bg-[#0e0e0e] border border-white/[0.04] hover:border-[#ff4500]/15 overflow-hidden transition-all duration-500 min-h-[260px] flex flex-col justify-end"
+          className="group relative p-8 rounded-3xl bg-[#0e0e0e] border border-white/[0.04] hover:border-[var(--rc-brand)]/15 overflow-hidden transition-all duration-500 min-h-[260px] flex flex-col justify-end"
         >
           {/* Giant icon in background */}
           <f.icon
             size={180}
             strokeWidth={0.5}
-            className="absolute -top-6 -right-6 text-white/[0.02] group-hover:text-[#ff4500]/[0.06] transition-colors duration-700"
+            className="absolute -top-6 -right-6 text-white/[0.02] group-hover:text-[var(--rc-brand)]/[0.06] transition-colors duration-700"
           />
 
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#ff4500]/10 border border-[#ff4500]/10 mb-4">
-              <f.icon size={12} className="text-[#ff4500]" />
-              <span className="text-[10px] text-[#ff4500] tracking-widest uppercase font-semibold">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--rc-brand)]/10 border border-[var(--rc-brand)]/10 mb-4">
+              <f.icon size={12} className="text-[var(--rc-brand)]" />
+              <span className="text-[10px] text-[var(--rc-brand)] tracking-widest uppercase font-semibold">
                 {f.tag}
               </span>
             </div>
@@ -343,10 +343,10 @@ function Card8() {
       {features.map((f, i) => (
         <div
           key={i}
-          className="group flex items-center gap-6 p-6 rounded-2xl bg-[#0c0c0c] border border-white/[0.04] hover:border-[#ff4500]/20 hover:bg-[#0e0e0e] transition-all duration-500"
+          className="group flex items-center gap-6 p-6 rounded-2xl bg-[#0c0c0c] border border-white/[0.04] hover:border-[var(--rc-brand)]/20 hover:bg-[#0e0e0e] transition-all duration-500"
         >
-          <div className="shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-[#ff4500]/20 to-[#ff4500]/5 border border-[#ff4500]/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-            <f.icon size={24} className="text-[#ff4500]" />
+          <div className="shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--rc-brand)]/20 to-[var(--rc-brand)]/5 border border-[var(--rc-brand)]/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <f.icon size={24} className="text-[var(--rc-brand)]" />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -355,8 +355,8 @@ function Card8() {
           </div>
 
           <div className="shrink-0 hidden sm:block">
-            <div className="w-10 h-10 rounded-full border border-white/[0.06] flex items-center justify-center group-hover:border-[#ff4500]/30 group-hover:bg-[#ff4500]/5 transition-all duration-300">
-              <ArrowUpRight size={16} className="text-white/20 group-hover:text-[#ff4500] transition-colors" />
+            <div className="w-10 h-10 rounded-full border border-white/[0.06] flex items-center justify-center group-hover:border-[var(--rc-brand)]/30 group-hover:bg-[var(--rc-brand)]/5 transition-all duration-300">
+              <ArrowUpRight size={16} className="text-white/20 group-hover:text-[var(--rc-brand)] transition-colors" />
             </div>
           </div>
         </div>
@@ -369,7 +369,7 @@ function Card8() {
 // CARD 9 — Glass Morphism with Blur Orb
 // ═══════════════════════════════════════════════════════════════
 function Card9() {
-  const orbColors = ["#ff4500", "#ff6b35", "#ff8a65"];
+  const orbColors = ["var(--rc-brand)", "#ff6b35", "#ff8a65"];
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {features.map((f, i) => (
@@ -413,7 +413,7 @@ function Card10() {
         <div
           key={i}
           className={cn(
-            "group relative rounded-2xl bg-[#0e0e0e] border border-white/[0.04] hover:border-[#ff4500]/20 overflow-hidden transition-all duration-500",
+            "group relative rounded-2xl bg-[#0e0e0e] border border-white/[0.04] hover:border-[var(--rc-brand)]/20 overflow-hidden transition-all duration-500",
             i === 0 && "md:col-span-2 md:row-span-1",
             i === 1 && "md:col-span-1 md:row-span-2",
             i === 2 && "md:col-span-2"
@@ -421,10 +421,10 @@ function Card10() {
         >
           <div className="p-8 h-full flex flex-col">
             <div className="flex items-start justify-between mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#ff4500]/10 flex items-center justify-center">
-                <f.icon size={18} className="text-[#ff4500]" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--rc-brand)]/10 flex items-center justify-center">
+                <f.icon size={18} className="text-[var(--rc-brand)]" />
               </div>
-              <span className="font-mono text-3xl font-black text-[#ff4500]/20 group-hover:text-[#ff4500]/40 transition-colors">
+              <span className="font-mono text-3xl font-black text-[var(--rc-brand)]/20 group-hover:text-[var(--rc-brand)]/40 transition-colors">
                 {metrics[i]}
               </span>
             </div>
@@ -481,7 +481,7 @@ export default function CardsShowcase() {
         {cardVariants.map(({ id, name, desc, component: CardComponent }) => (
           <section key={id}>
             <div className="mb-8 flex items-baseline gap-4">
-              <span className="font-mono text-sm text-[#ff4500] bg-[#ff4500]/10 px-3 py-1 rounded-lg">
+              <span className="font-mono text-sm text-[var(--rc-brand)] bg-[var(--rc-brand)]/10 px-3 py-1 rounded-lg">
                 #{id}
               </span>
               <div>

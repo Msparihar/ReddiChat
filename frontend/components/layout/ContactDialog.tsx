@@ -159,7 +159,7 @@ export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogPr
               className={cn(
                 "rounded-full px-3 py-1.5 text-xs font-medium transition-colors duration-150",
                 selectedChip === key
-                  ? "bg-purple-600 text-white border border-purple-600"
+                  ? "bg-brand text-white border border-brand"
                   : isDark
                     ? "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-transparent"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
@@ -201,7 +201,7 @@ export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogPr
               onChange={(e) => setSubject(e.target.value)}
               maxLength={200}
               className={cn(
-                "w-full text-sm px-3 py-2 rounded-md border focus:outline-none focus:ring-1 focus:ring-purple-500",
+                "w-full text-sm px-3 py-2 rounded-md border focus:outline-none focus:ring-1 focus:ring-brand",
                 isDark
                   ? "bg-gray-800 border-gray-600 text-gray-100"
                   : "bg-white border-gray-300 text-gray-900"
@@ -225,7 +225,7 @@ export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogPr
               rows={5}
               placeholder="How can we help?"
               className={cn(
-                "w-full text-sm px-3 py-2 rounded-md border resize-none focus:outline-none focus:ring-1 focus:ring-purple-500",
+                "w-full text-sm px-3 py-2 rounded-md border resize-none focus:outline-none focus:ring-1 focus:ring-brand",
                 isDark
                   ? "bg-gray-800 border-gray-600 text-gray-100 placeholder:text-gray-500"
                   : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
@@ -242,7 +242,7 @@ export function ContactDialog({ open, onOpenChange, userEmail }: ContactDialogPr
             disabled={isSending || !subject.trim() || !message.trim()}
             className={cn(
               "w-full py-2 px-4 rounded-md text-sm font-medium transition-colors",
-              "bg-purple-600 hover:bg-purple-700 text-white",
+              "bg-brand hover:bg-brand-hover text-white",
               "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >

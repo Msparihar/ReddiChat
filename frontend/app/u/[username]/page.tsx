@@ -178,7 +178,7 @@ function PostCard({ post, isDark }: { post: UserPost; isDark: boolean }) {
           className="block group"
         >
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-medium text-orange-500">r/{post.subreddit}</span>
+            <span className="text-xs font-medium text-brand">r/{post.subreddit}</span>
             {post.isNsfw && (
               <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded">NSFW</span>
             )}
@@ -190,7 +190,7 @@ function PostCard({ post, isDark }: { post: UserPost; isDark: boolean }) {
           </div>
           <h3
             className={cn(
-              "font-medium group-hover:text-orange-400 transition-colors",
+              "font-medium group-hover:text-brand transition-colors",
               isDark ? "text-gray-200" : "text-gray-800"
             )}
           >
@@ -257,12 +257,12 @@ function CommentCard({ comment, isDark }: { comment: UserComment; isDark: boolea
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "block rounded-xl p-4 border transition-all hover:border-orange-500/50",
+        "block rounded-xl p-4 border transition-all hover:border-brand/50",
         isDark ? "bg-gray-900/50 border-gray-800" : "bg-white border-gray-200 shadow-sm"
       )}
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs font-medium text-orange-500">r/{comment.subreddit}</span>
+        <span className="text-xs font-medium text-brand">r/{comment.subreddit}</span>
       </div>
       <p className={cn("text-sm mb-2", isDark ? "text-gray-300" : "text-gray-700")}>{comment.body}</p>
       <p className={cn("text-xs line-clamp-1 mb-3", isDark ? "text-gray-500" : "text-gray-400")}>
@@ -335,7 +335,7 @@ function MediaGrid({ posts, isDark }: { posts: UserPost[]; isDark: boolean }) {
 function LoadingSpinner() {
   return (
     <div className="flex justify-center py-8">
-      <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+      <Loader2 className="w-6 h-6 animate-spin text-brand" />
     </div>
   );
 }
@@ -400,7 +400,7 @@ function FilterBar({
           value={sort}
           onChange={(e) => setSort(e.target.value as SortOption)}
           className={cn(
-            "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500",
+            "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand",
             isDark
               ? "bg-gray-800 text-gray-200 border-gray-700"
               : "bg-gray-100 text-gray-700 border-gray-200"
@@ -428,7 +428,7 @@ function FilterBar({
             value={time}
             onChange={(e) => setTime(e.target.value as TimeFilter)}
             className={cn(
-              "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500",
+              "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand",
               isDark
                 ? "bg-gray-800 text-gray-200 border-gray-700"
                 : "bg-gray-100 text-gray-700 border-gray-200"
@@ -457,7 +457,7 @@ function FilterBar({
             value={subreddit}
             onChange={(e) => setSubreddit(e.target.value)}
             className={cn(
-              "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500 max-w-[140px]",
+              "appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand max-w-[140px]",
               isDark
                 ? "bg-gray-800 text-gray-200 border-gray-700"
                 : "bg-gray-100 text-gray-700 border-gray-200"
@@ -521,8 +521,8 @@ function LoginPrompt({ username, isDark }: { username: string; isDark: boolean }
         isDark ? "bg-gray-900/50 border-gray-800" : "bg-white border-gray-200 shadow-lg"
       )}
     >
-      <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
-        <Lock className="w-8 h-8 text-orange-500" />
+      <div className="w-16 h-16 rounded-full bg-brand/10 flex items-center justify-center mx-auto mb-4">
+        <Lock className="w-8 h-8 text-brand" />
       </div>
       <h3 className={cn("text-lg font-semibold mb-2", isDark ? "text-white" : "text-gray-900")}>
         Sign in to view content
@@ -737,7 +737,7 @@ export default function RedditUserPage({
   if (userLoading) {
     return (
       <div className={cn("min-h-screen flex items-center justify-center", isDark ? "bg-gray-950" : "bg-gray-50")}>
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand" />
       </div>
     );
   }
@@ -749,7 +749,7 @@ export default function RedditUserPage({
         <p className={cn("text-lg mb-4", isDark ? "text-gray-300" : "text-gray-600")}>
           {userData?.error || "Failed to load user data"}
         </p>
-        <Link href="/" className="flex items-center gap-2 text-orange-500 hover:text-orange-400">
+        <Link href="/" className="flex items-center gap-2 text-brand hover:text-brand-hover">
           <ArrowLeft size={16} />
           Back to Home
         </Link>
@@ -780,7 +780,7 @@ export default function RedditUserPage({
           <Link
             href="/"
             className={cn(
-              "inline-flex items-center gap-2 hover:text-orange-400 transition-colors text-sm flex-shrink-0",
+              "inline-flex items-center gap-2 hover:text-brand transition-colors text-sm flex-shrink-0",
               isDark ? "text-gray-400" : "text-gray-600"
             )}
           >
@@ -814,7 +814,7 @@ export default function RedditUserPage({
                 className="w-16 h-16 rounded-full"
               />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand to-brand-hover flex items-center justify-center">
                 <User className="w-8 h-8 text-white" />
               </div>
             )}
@@ -867,7 +867,7 @@ export default function RedditUserPage({
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all",
                 activeTab === tab.id
-                  ? "bg-orange-500 text-white"
+                  ? "bg-brand text-white"
                   : isDark
                   ? "text-gray-400 hover:text-white hover:bg-gray-800"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"

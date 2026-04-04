@@ -47,7 +47,7 @@ const features = [
 ];
 
 const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -100,14 +100,14 @@ export default function LandingPage() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-[background-color,border-color,box-shadow] duration-500",
           isScrolled
-            ? "bg-black/80 backdrop-blur-xl border-b border-white/5 shadow-2xl shadow-orange-500/5"
+            ? "bg-black/80 backdrop-blur-xl border-b border-white/5 shadow-2xl shadow-brand/5"
             : "bg-transparent"
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3 group">
-              <div className="relative p-2 bg-[#ff4500] rounded-lg group-hover:shadow-lg group-hover:shadow-orange-500/30 transition-shadow duration-300">
+              <div className="relative p-2 bg-brand rounded-lg group-hover:shadow-lg group-hover:shadow-brand/30 transition-shadow duration-300">
                 <Bot size={22} className="text-white" />
               </div>
               <span className="text-lg font-outfit font-bold text-white tracking-tight">
@@ -130,7 +130,7 @@ export default function LandingPage() {
                   )}
                 >
                   {item}
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-[#ff4500] group-hover:w-full transition-[width] duration-300" />
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-brand group-hover:w-full transition-[width] duration-300" />
                 </button>
               ))}
               <button
@@ -142,7 +142,7 @@ export default function LandingPage() {
               >
                 <User size={14} />
                 Lookup
-                <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-[#ff4500] group-hover:w-full transition-[width] duration-300" />
+                <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-brand group-hover:w-full transition-[width] duration-300" />
               </button>
             </nav>
 
@@ -162,7 +162,7 @@ export default function LandingPage() {
               <Link
                 href="/chat"
                 className={cn(
-                  "px-6 py-2 rounded-lg font-medium text-sm bg-[#ff4500] text-white hover:bg-[#e03d00] transition-[background-color] duration-200",
+                  "px-6 py-2 rounded-lg font-medium text-sm bg-brand text-white hover:bg-brand-hover transition-[background-color] duration-200",
                   focusRing
                 )}
               >
@@ -224,7 +224,7 @@ export default function LandingPage() {
                     href="/chat"
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
-                      "block w-full text-center bg-[#ff4500] text-white px-6 py-3 rounded-lg font-medium text-sm hover:bg-[#e03d00] transition-[background-color] duration-200",
+                      "block w-full text-center bg-brand text-white px-6 py-3 rounded-lg font-medium text-sm hover:bg-brand-hover transition-[background-color] duration-200",
                       focusRing
                     )}
                   >
@@ -246,7 +246,7 @@ export default function LandingPage() {
         <div className="motion-reduce:hidden">
           <Spotlight
             className="-top-40 left-0 md:left-60 md:-top-20"
-            fill="#ff4500"
+            fill="var(--rc-brand)"
           />
           <Spotlight
             className="top-10 left-full -translate-x-[40%] md:-top-10"
@@ -255,7 +255,7 @@ export default function LandingPage() {
         </div>
 
         {/* Subtle radial glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/5 rounded-full blur-[120px] motion-reduce:opacity-100 animate-glow-pulse motion-reduce:animate-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand/5 rounded-full blur-[120px] motion-reduce:opacity-100 animate-glow-pulse motion-reduce:animate-none" />
 
         {/* Background beams */}
         <div className="motion-reduce:hidden">
@@ -266,7 +266,7 @@ export default function LandingPage() {
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div {...motionProps(0.2)}>
             <div className="inline-flex items-center space-x-2 bg-white/[0.03] border border-white/[0.06] rounded-full px-5 py-2 mb-10 backdrop-blur-sm">
-              <div className="w-1.5 h-1.5 bg-orange-500 rounded-full motion-reduce:animate-none animate-pulse" />
+              <div className="w-1.5 h-1.5 bg-brand rounded-full motion-reduce:animate-none animate-pulse" />
               <span className="text-xs text-gray-400 tracking-widest uppercase font-outfit">
                 AI-powered Reddit insights
               </span>
@@ -278,7 +278,7 @@ export default function LandingPage() {
             className="font-outfit font-bold text-5xl sm:text-6xl lg:text-8xl text-white mb-8 leading-[0.95] tracking-tight"
           >
             Ask Reddit{" "}
-            <span className="bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand via-red-500 to-brand bg-clip-text text-transparent">
               Anything
             </span>
             <br />
@@ -301,7 +301,7 @@ export default function LandingPage() {
             <Link
               href="/chat"
               className={cn(
-                "group bg-[#ff4500] text-white px-8 py-4 rounded-xl font-outfit font-semibold text-base flex items-center gap-2 shadow-2xl shadow-orange-500/20 hover:bg-[#e03d00] hover:shadow-orange-500/40 transition-[background-color,box-shadow] duration-300",
+                "group bg-brand text-white px-8 py-4 rounded-xl font-outfit font-semibold text-base flex items-center gap-2 shadow-2xl shadow-brand/20 hover:bg-brand-hover hover:shadow-brand/40 transition-[background-color,box-shadow] duration-300",
                 focusRing
               )}
             >
@@ -315,13 +315,13 @@ export default function LandingPage() {
             <button
               onClick={() => setShowUserLookup(true)}
               className={cn(
-                "group px-8 py-4 rounded-xl font-outfit font-semibold text-base text-white border border-white/10 hover:border-orange-500/30 bg-white/[0.02] hover:bg-white/[0.05] transition-[border-color,background-color] duration-300 backdrop-blur-sm flex items-center gap-2 cursor-pointer",
+                "group px-8 py-4 rounded-xl font-outfit font-semibold text-base text-white border border-white/10 hover:border-brand/30 bg-white/[0.02] hover:bg-white/[0.05] transition-[border-color,background-color] duration-300 backdrop-blur-sm flex items-center gap-2 cursor-pointer",
                 focusRing
               )}
             >
               <User
                 size={18}
-                className="text-gray-400 group-hover:text-orange-400 transition-colors duration-200"
+                className="text-gray-400 group-hover:text-brand transition-colors duration-200"
               />
               User Lookup
             </button>
@@ -335,14 +335,14 @@ export default function LandingPage() {
       {/* ═══ FEATURES — Animated Gradient Border Cards ═══ */}
       <section id="features" className="relative py-32 px-4 sm:px-6 lg:px-8">
         {/* Subtle top glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-px bg-gradient-to-r from-transparent via-brand/30 to-transparent" />
 
         <div className="max-w-6xl mx-auto">
           <motion.div
             {...viewMotionProps(0)}
             className="text-center mb-20"
           >
-            <span className="text-xs text-orange-500 tracking-[0.3em] uppercase font-outfit mb-4 block">
+            <span className="text-xs text-brand tracking-[0.3em] uppercase font-outfit mb-4 block">
               Features
             </span>
             <h2 className="font-outfit font-bold text-3xl sm:text-4xl lg:text-5xl text-white mb-4">
@@ -365,7 +365,7 @@ export default function LandingPage() {
                   className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-border-spin motion-reduce:animate-none"
                   style={{
                     background:
-                      "conic-gradient(from 0deg, #ff4500, #ff6b35, #ff8a65, #ffd4a8, #ff4500)",
+                      "conic-gradient(from 0deg, var(--rc-brand), #ff6b35, #ff8a65, #ffd4a8, var(--rc-brand))",
                   }}
                 />
                 {/* Inner background that sits inside the border */}
@@ -376,10 +376,10 @@ export default function LandingPage() {
 
                 <div className="relative z-10 p-8">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-full bg-[#ff4500] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center">
                       <feature.icon size={18} className="text-white" />
                     </div>
-                    <span className="text-[10px] tracking-[0.25em] uppercase text-[#ff4500]/60 font-medium">
+                    <span className="text-[10px] tracking-[0.25em] uppercase text-brand/60 font-medium">
                       {feature.tag}
                     </span>
                   </div>
@@ -401,7 +401,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="p-1.5 bg-[#ff4500] rounded-lg">
+              <div className="p-1.5 bg-brand rounded-lg">
                 <Bot size={16} className="text-white" />
               </div>
               <span className="font-outfit font-semibold text-white text-sm">
@@ -477,7 +477,7 @@ export default function LandingPage() {
                 }}
                 disabled={!userLookupInput.trim() || isLookingUp}
                 className={cn(
-                  "w-full bg-[#ff4500] text-white px-4 py-3 rounded-lg font-outfit font-medium text-sm hover:bg-[#e03d00] transition-[background-color] duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2",
+                  "w-full bg-brand text-white px-4 py-3 rounded-lg font-outfit font-medium text-sm hover:bg-brand-hover transition-[background-color] duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2",
                   focusRing
                 )}
               >

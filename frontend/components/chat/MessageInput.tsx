@@ -150,7 +150,7 @@ export function MessageInput() {
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-lg border",
                 isDark
-                  ? "bg-gray-800 border-gray-700"
+                  ? "bg-[#1b1b1e] border-[rgba(255,255,255,0.06)]"
                   : "bg-gray-100 border-gray-200"
               )}
             >
@@ -182,8 +182,8 @@ export function MessageInput() {
           className={cn(
             "relative border rounded-xl transition-colors",
             isDark
-              ? "bg-gray-900 border-gray-700 focus-within:border-gray-500"
-              : "bg-white border-gray-200 focus-within:border-gray-400"
+              ? "bg-[#141416] border-[rgba(255,255,255,0.08)] focus-within:border-[rgba(255,255,255,0.15)]"
+              : "bg-white border-[rgba(0,0,0,0.10)] focus-within:border-[rgba(0,0,0,0.15)]"
           )}
         >
           {/* Textarea */}
@@ -221,7 +221,7 @@ export function MessageInput() {
           <div
             className={cn(
               "flex items-center justify-between px-3 py-2 border-t",
-              isDark ? "border-gray-800" : "border-gray-100"
+              isDark ? "border-[rgba(255,255,255,0.06)]" : "border-gray-100"
             )}
           >
             <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export function MessageInput() {
                     className={cn(
                       "flex items-center gap-1.5 h-7 px-2 text-xs rounded-md",
                       isDark
-                        ? "text-gray-300 hover:bg-gray-800"
+                        ? "text-gray-300 hover:bg-[#222226]"
                         : "text-gray-600 hover:bg-gray-100"
                     )}
                   >
@@ -259,7 +259,7 @@ export function MessageInput() {
                   className={cn(
                     "min-w-[12rem] max-sm:min-w-[calc(100vw-2rem)]",
                     isDark
-                      ? "bg-gray-900 border-gray-700"
+                      ? "bg-[#141416] border-[rgba(255,255,255,0.06)]"
                       : "bg-white border-gray-200"
                   )}
                 >
@@ -271,7 +271,7 @@ export function MessageInput() {
                         onSelect={() => allowed && setSelectedModel(model.id)}
                         className={cn(
                           "flex items-center justify-between gap-2 cursor-pointer",
-                          isDark ? "hover:bg-gray-800" : "hover:bg-gray-50",
+                          isDark ? "hover:bg-[#222226]" : "hover:bg-gray-50",
                           !allowed && "opacity-50 cursor-not-allowed"
                         )}
                         disabled={!allowed}
@@ -286,7 +286,7 @@ export function MessageInput() {
                           </div>
                         </div>
                         {selectedModel === model.id ? (
-                          <Check className="w-4 h-4 text-purple-500" />
+                          <Check className="w-4 h-4 text-brand" />
                         ) : !allowed ? (
                           <Lock className="w-3.5 h-3.5 text-gray-400" />
                         ) : null}
@@ -300,7 +300,7 @@ export function MessageInput() {
               <div
                 className={cn(
                   "h-4 w-px",
-                  isDark ? "bg-gray-700" : "bg-gray-200"
+                  isDark ? "bg-[#2a2a2f]" : "bg-[#e8e7e5]"
                 )}
               />
 
@@ -319,9 +319,9 @@ export function MessageInput() {
                 className={cn(
                   "p-1.5 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
                   isDark
-                    ? "text-gray-400 hover:bg-gray-800"
+                    ? "text-gray-400 hover:bg-[#222226]"
                     : "text-gray-500 hover:bg-gray-100",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                 )}
                 title="Attach files"
                 aria-label="Attach files"
@@ -333,7 +333,7 @@ export function MessageInput() {
               <div
                 className={cn(
                   "h-4 w-px",
-                  isDark ? "bg-gray-700" : "bg-gray-200"
+                  isDark ? "bg-[#2a2a2f]" : "bg-[#e8e7e5]"
                 )}
               />
 
@@ -363,11 +363,11 @@ export function MessageInput() {
               className={cn(
                 "p-1.5 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
                 message.trim() && !isLoading && !isStreaming
-                  ? "bg-purple-600 hover:bg-purple-700 text-white"
+                  ? "bg-brand hover:bg-brand-hover text-white"
                   : isDark
-                    ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                    ? "bg-[#1b1b1e] text-gray-500 cursor-not-allowed"
                     : "bg-gray-100 text-gray-400 cursor-not-allowed",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
               )}
               title={isStreaming ? "AI is responding..." : "Send message"}
               aria-label={isStreaming ? "AI is responding" : "Send message"}

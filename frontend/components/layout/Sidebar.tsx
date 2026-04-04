@@ -60,8 +60,8 @@ export function Sidebar() {
       className={cn(
         "border-r transition-all duration-300 flex flex-col z-40",
         isDark
-          ? "bg-gray-900 border-gray-800"
-          : "bg-gray-50 border-gray-200",
+          ? "bg-[#141416] border-gray-800"
+          : "bg-[#f8f7f6] border-gray-200",
         "fixed top-0 bottom-0 left-0",
         isSidebarOpen ? "w-60 translate-x-0" : "w-16 translate-x-0"
       )}
@@ -83,7 +83,7 @@ export function Sidebar() {
                   onClick={toggleSidebar}
                   className={cn(
                     "p-1.5 rounded-md transition-colors",
-                    isDark ? "hover:bg-gray-800" : "hover:bg-gray-200"
+                    isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]"
                   )}
                   title="Collapse sidebar"
                   aria-label="Collapse sidebar"
@@ -98,7 +98,7 @@ export function Sidebar() {
                 <Link
                   href="/"
                   className={cn(
-                    "text-lg font-semibold hover:text-orange-400 transition-colors cursor-pointer",
+                    "text-lg font-semibold hover:text-brand transition-colors cursor-pointer",
                     isDark ? "text-gray-100" : "text-gray-900"
                   )}
                 >
@@ -109,7 +109,7 @@ export function Sidebar() {
 
             <button
               onClick={handleNewChat}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center justify-center gap-2 px-3 py-2 transition-colors text-sm font-medium"
+              className="w-full bg-brand hover:bg-brand-hover text-white rounded-md flex items-center justify-center gap-2 px-3 py-2 transition-colors text-sm font-medium"
               aria-label="Create new chat"
             >
               <Plus className="w-4 h-4" />
@@ -123,7 +123,7 @@ export function Sidebar() {
                 onClick={toggleSidebar}
                 className={cn(
                   "w-full p-2 rounded-md transition-colors flex items-center justify-center",
-                  isDark ? "hover:bg-gray-800" : "hover:bg-gray-200"
+                  isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]"
                 )}
                 aria-label="Expand sidebar"
               >
@@ -139,7 +139,7 @@ export function Sidebar() {
 
             <button
               onClick={handleNewChat}
-              className="w-full p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors flex items-center justify-center"
+              className="w-full p-2 bg-brand hover:bg-brand-hover text-white rounded-md transition-colors flex items-center justify-center"
               aria-label="Create new chat"
             >
               <Plus className="w-4 h-4" />

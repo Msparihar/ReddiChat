@@ -97,7 +97,7 @@ export default function EditorialLandingPage() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative p-2.5 bg-[#ff4500] rounded-xl group-hover:scale-110 transition-transform duration-300">
+            <div className="relative p-2.5 bg-[var(--rc-brand)] rounded-xl group-hover:scale-110 transition-transform duration-300">
               <Bot size={22} className="text-white" />
             </div>
             <span className="font-syne text-xl font-bold text-[#f5f5f0] tracking-tight">
@@ -129,7 +129,7 @@ export default function EditorialLandingPage() {
           <div className="hidden md:block">
             <button
               onClick={handleGetStarted}
-              className="group font-syne text-sm font-semibold tracking-wide uppercase px-7 py-3 bg-[#ff4500] text-white rounded-full hover:bg-[#ff5722] transition-all duration-300 flex items-center gap-2"
+              className="group font-syne text-sm font-semibold tracking-wide uppercase px-7 py-3 bg-[var(--rc-brand)] text-white rounded-full hover:bg-[#ff5722] transition-all duration-300 flex items-center gap-2"
             >
               {isAuthenticated ? "Go to Chat" : "Get Started"}
               <ArrowRight
@@ -185,7 +185,7 @@ export default function EditorialLandingPage() {
                     handleGetStarted();
                     setIsMenuOpen(false);
                   }}
-                  className="w-full font-syne text-base font-semibold tracking-wide uppercase px-6 py-4 bg-[#ff4500] text-white rounded-full hover:bg-[#ff5722] transition-all"
+                  className="w-full font-syne text-base font-semibold tracking-wide uppercase px-6 py-4 bg-[var(--rc-brand)] text-white rounded-full hover:bg-[#ff5722] transition-all"
                 >
                   {isAuthenticated ? "Go to Chat" : "Get Started"}
                 </button>
@@ -215,8 +215,8 @@ export default function EditorialLandingPage() {
       />
 
       {/* Subtle ambient blurs */}
-      <div className="absolute top-[15%] left-[5%] w-[500px] h-[500px] bg-[#ff4500]/[0.04] rounded-full blur-[120px]" />
-      <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-[#ff4500]/[0.03] rounded-full blur-[100px]" />
+      <div className="absolute top-[15%] left-[5%] w-[500px] h-[500px] bg-[var(--rc-brand)]/[0.04] rounded-full blur-[120px]" />
+      <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-[var(--rc-brand)]/[0.03] rounded-full blur-[100px]" />
 
       <motion.div
         style={{ y: heroY, opacity: heroOpacity }}
@@ -232,7 +232,7 @@ export default function EditorialLandingPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="mb-8"
             >
-              <span className="font-jakarta text-xs tracking-[0.3em] uppercase text-[#ff4500] font-medium">
+              <span className="font-jakarta text-xs tracking-[0.3em] uppercase text-[var(--rc-brand)] font-medium">
                 AI-Powered Reddit Intelligence
               </span>
             </motion.div>
@@ -251,7 +251,7 @@ export default function EditorialLandingPage() {
                 REDDIT
               </span>
               <span
-                className="block text-6xl sm:text-7xl md:text-8xl lg:text-[7rem] xl:text-[8.5rem] bg-gradient-to-r from-[#ff4500] via-[#ff6b35] to-[#ff4500] bg-clip-text text-transparent"
+                className="block text-6xl sm:text-7xl md:text-8xl lg:text-[7rem] xl:text-[8.5rem] bg-gradient-to-r from-[var(--rc-brand)] via-[#ff6b35] to-[var(--rc-brand)] bg-clip-text text-transparent"
                 style={{ backgroundSize: "200% 100%" }}
               >
                 ANYTHING
@@ -263,7 +263,7 @@ export default function EditorialLandingPage() {
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-              className="mt-8 h-[2px] w-24 bg-[#ff4500] origin-left"
+              className="mt-8 h-[2px] w-24 bg-[var(--rc-brand)] origin-left"
             />
           </div>
 
@@ -288,7 +288,7 @@ export default function EditorialLandingPage() {
             >
               <button
                 onClick={handleGetStarted}
-                className="group font-syne text-sm font-bold tracking-wider uppercase px-8 py-4 bg-[#ff4500] text-white rounded-full hover:bg-[#ff5722] transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(255,69,0,0.25)]"
+                className="group font-syne text-sm font-bold tracking-wider uppercase px-8 py-4 bg-[var(--rc-brand)] text-white rounded-full hover:bg-[#ff5722] transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(255,69,0,0.25)]"
               >
                 {isAuthenticated ? "Go to Chat" : "Start Chatting"}
                 <ArrowRight
@@ -299,7 +299,7 @@ export default function EditorialLandingPage() {
 
               <button
                 onClick={() => setShowUserLookup(true)}
-                className="group font-syne text-sm font-bold tracking-wider uppercase px-8 py-4 border border-[#f5f5f0]/20 text-[#f5f5f0] rounded-full hover:border-[#ff4500]/60 hover:bg-[#ff4500]/5 transition-all duration-300 flex items-center justify-center gap-3"
+                className="group font-syne text-sm font-bold tracking-wider uppercase px-8 py-4 border border-[#f5f5f0]/20 text-[#f5f5f0] rounded-full hover:border-[var(--rc-brand)]/60 hover:bg-[var(--rc-brand)]/5 transition-all duration-300 flex items-center justify-center gap-3"
               >
                 <User size={18} />
                 User Lookup
@@ -353,16 +353,16 @@ export default function EditorialLandingPage() {
       {/* Scoped CSS to override the LampContainer's cyan colors to orange */}
       <style>{`
         #lamp-section .from-cyan-500 {
-          --tw-gradient-from: #ff4500 !important;
+          --tw-gradient-from: var(--rc-brand) !important;
           --tw-gradient-from-position:  !important;
           --tw-gradient-to: rgb(255 69 0 / 0) !important;
         }
         #lamp-section .to-cyan-500 {
-          --tw-gradient-to: #ff4500 !important;
+          --tw-gradient-to: var(--rc-brand) !important;
           --tw-gradient-to-position:  !important;
         }
         #lamp-section .bg-cyan-500 {
-          background-color: #ff4500 !important;
+          background-color: var(--rc-brand) !important;
         }
         #lamp-section .bg-cyan-400 {
           background-color: #ff6b35 !important;
@@ -378,7 +378,7 @@ export default function EditorialLandingPage() {
           transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
           className="text-center"
         >
-          <p className="font-jakarta text-sm tracking-[0.3em] uppercase text-[#ff4500]/80 mb-4">
+          <p className="font-jakarta text-sm tracking-[0.3em] uppercase text-[var(--rc-brand)]/80 mb-4">
             Next Generation
           </p>
           <h2 className="font-syne text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-br from-[#f5f5f0] to-[#f5f5f0]/60 bg-clip-text text-transparent">
@@ -405,7 +405,7 @@ export default function EditorialLandingPage() {
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
         >
-          <span className="font-jakarta text-xs tracking-[0.3em] uppercase text-[#ff4500] font-medium">
+          <span className="font-jakarta text-xs tracking-[0.3em] uppercase text-[var(--rc-brand)] font-medium">
             What we offer
           </span>
           <h2 className="font-syne text-4xl sm:text-5xl md:text-6xl font-bold text-[#f5f5f0] mt-4 tracking-tight">
@@ -428,17 +428,17 @@ export default function EditorialLandingPage() {
               transition={{ duration: 0.6, delay: index * 0.15 }}
               className={cn("group", yOffsets[index])}
             >
-              <div className="relative p-8 sm:p-10 rounded-2xl bg-[#1c1c1c] border border-white/[0.04] transition-all duration-500 hover:border-[#ff4500]/30 hover:-translate-y-1 hover:shadow-[0_0_60px_rgba(255,69,0,0.08)]">
+              <div className="relative p-8 sm:p-10 rounded-2xl bg-[#1c1c1c] border border-white/[0.04] transition-all duration-500 hover:border-[var(--rc-brand)]/30 hover:-translate-y-1 hover:shadow-[0_0_60px_rgba(255,69,0,0.08)]">
                 {/* Decorative number */}
-                <span className="font-syne text-[5rem] sm:text-[6rem] font-black text-white/[0.03] absolute top-4 right-6 leading-none select-none group-hover:text-[#ff4500]/[0.06] transition-colors duration-500">
+                <span className="font-syne text-[5rem] sm:text-[6rem] font-black text-white/[0.03] absolute top-4 right-6 leading-none select-none group-hover:text-[var(--rc-brand)]/[0.06] transition-colors duration-500">
                   {feature.number}
                 </span>
 
                 {/* Icon */}
-                <div className="relative z-10 w-14 h-14 rounded-xl bg-[#ff4500]/10 border border-[#ff4500]/20 flex items-center justify-center mb-8 group-hover:bg-[#ff4500]/15 transition-colors duration-300">
+                <div className="relative z-10 w-14 h-14 rounded-xl bg-[var(--rc-brand)]/10 border border-[var(--rc-brand)]/20 flex items-center justify-center mb-8 group-hover:bg-[var(--rc-brand)]/15 transition-colors duration-300">
                   <feature.icon
                     size={24}
-                    className="text-[#ff4500]"
+                    className="text-[var(--rc-brand)]"
                   />
                 </div>
 
@@ -451,7 +451,7 @@ export default function EditorialLandingPage() {
                 </p>
 
                 {/* Bottom accent line */}
-                <div className="mt-8 h-[1px] w-12 bg-white/10 group-hover:w-full group-hover:bg-[#ff4500]/30 transition-all duration-500" />
+                <div className="mt-8 h-[1px] w-12 bg-white/10 group-hover:w-full group-hover:bg-[var(--rc-brand)]/30 transition-all duration-500" />
               </div>
             </motion.div>
           );
@@ -479,7 +479,7 @@ export default function EditorialLandingPage() {
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#ff4500] rounded-lg">
+            <div className="p-2 bg-[var(--rc-brand)] rounded-lg">
               <Bot size={16} className="text-white" />
             </div>
             <span className="font-syne text-sm font-semibold text-[#f5f5f0]/80">
@@ -545,7 +545,7 @@ export default function EditorialLandingPage() {
               }
             }}
             disabled={!userLookupInput.trim() || isLookingUp}
-            className="w-full font-syne text-sm font-semibold tracking-wide uppercase bg-[#ff4500] text-white px-4 py-3.5 rounded-xl hover:bg-[#ff5722] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full font-syne text-sm font-semibold tracking-wide uppercase bg-[var(--rc-brand)] text-white px-4 py-3.5 rounded-xl hover:bg-[#ff5722] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLookingUp ? (
               <>
@@ -566,7 +566,7 @@ export default function EditorialLandingPage() {
 
   // ─── RENDER ──────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#050505] text-[#f5f5f0] selection:bg-[#ff4500]/30 selection:text-white">
+    <div className="min-h-screen bg-[#050505] text-[#f5f5f0] selection:bg-[var(--rc-brand)]/30 selection:text-white">
       {Header}
       {Hero}
       {LampDivider}

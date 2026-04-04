@@ -50,7 +50,7 @@ export function MessageList() {
           <div key={message.id}>
             {message.role === "user" ? (
               <div
-                className={cn("px-4 py-6", isDark ? "bg-gray-950" : "bg-white")}
+                className={cn("px-4 py-6", isDark ? "bg-[#0c0c0d]" : "bg-white")}
               >
                 <div className="max-w-3xl mx-auto flex gap-4 justify-end">
                   <div className="max-w-2xl">
@@ -61,14 +61,14 @@ export function MessageList() {
                           {message.fileAttachments.map((file, fileIndex) => (
                             <div
                               key={fileIndex}
-                              className="text-sm text-gray-400 bg-gray-800 px-3 py-2 rounded"
+                              className="text-sm text-[#a0a0a8] bg-[#1b1b1e] px-3 py-2 rounded"
                             >
                               📎 {file.filename}
                             </div>
                           ))}
                         </div>
                       )}
-                    <div className="bg-blue-600 text-white px-4 py-3 rounded-2xl">
+                    <div className={cn("px-4 py-3 rounded-2xl", isDark ? "bg-[#1b1b1e] text-[#ededef]" : "bg-[#f0efed] text-[#1a1a1c]")}>
                       <div className="text-sm leading-relaxed whitespace-pre-wrap">
                         {message.content}
                       </div>
@@ -92,7 +92,7 @@ export function MessageList() {
                 aria-busy={message.isPending || undefined}
                 className={cn(
                   "px-4 py-6 group",
-                  isDark ? "bg-gray-950" : "bg-white",
+                  isDark ? "bg-[#0c0c0d]" : "bg-white",
                   message.isError && "bg-red-50 border-l-4 border-red-400"
                 )}
               >
@@ -107,8 +107,8 @@ export function MessageList() {
                             onClick={() => useChatStore.getState().retryFailedMessage()}
                             className={cn(
                               "text-xs px-3 py-1.5 rounded-md transition-colors",
-                              "bg-blue-600 hover:bg-blue-700 text-white",
-                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                              "bg-brand hover:bg-brand-hover text-white",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                             )}
                             aria-label="Retry sending message"
                           >
@@ -150,9 +150,9 @@ export function MessageList() {
                         onClick={() => handleCopy(message.content, message.id)}
                         className={cn(
                           "p-1 rounded transition-colors",
-                          isDark ? "hover:bg-gray-800 text-gray-500" : "hover:bg-gray-100 text-gray-400",
+                          isDark ? "hover:bg-[#222226] text-gray-500" : "hover:bg-gray-100 text-gray-400",
                           "md:opacity-0 md:group-hover:opacity-100",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                         )}
                         title="Copy message"
                         aria-label="Copy message"
@@ -170,7 +170,7 @@ export function MessageList() {
                         })}
                       </span>
                       {message.toolUsed && (
-                        <span className="text-blue-500">
+                        <span className="text-brand">
                           • Used{" "}
                           {message.toolUsed === "search_reddit"
                             ? "Reddit Search"
@@ -238,7 +238,7 @@ export function MessageList() {
                   isDark ? "text-gray-500" : "text-gray-400"
                 )}
               >
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <div className="w-2 h-2 rounded-full bg-brand animate-pulse"></div>
                 <span>
                   {currentTool === "search_reddit"
                     ? "Searching Reddit..."

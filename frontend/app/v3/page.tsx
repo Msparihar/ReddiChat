@@ -212,13 +212,13 @@ export default function V3LandingPage() {
           style={
             {
               "--aurora":
-                "repeating-linear-gradient(100deg, #ff6b35_10%, #ff8a65_15%, #ffab76_20%, #ffd4a8_25%, #ff4500_30%)",
+                "repeating-linear-gradient(100deg, #ff6b35_10%, #ff8a65_15%, #ffab76_20%, #ffd4a8_25%, var(--rc-brand)_30%)",
               "--dark-gradient":
                 "repeating-linear-gradient(100deg, #000_0%, #000_7%, transparent_10%, transparent_12%, #000_16%)",
               "--white-gradient":
                 "repeating-linear-gradient(100deg, #fff_0%, #fff_7%, transparent_10%, transparent_12%, #fff_16%)",
               "--blue-300": "#ffab76",
-              "--blue-400": "#ff4500",
+              "--blue-400": "var(--rc-brand)",
               "--blue-500": "#ff6b35",
               "--indigo-300": "#ff8a65",
               "--violet-200": "#ffd4a8",

@@ -173,7 +173,7 @@ export function UserSearchAutocomplete({
           placeholder={placeholder}
           autoFocus={autoFocus}
           className={cn(
-            "w-full pl-8 pr-10 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/50",
+            "w-full pl-8 pr-10 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand/50",
             inputHeight,
             isDark
               ? "bg-slate-800 border-slate-700 text-white placeholder-gray-500"
@@ -247,7 +247,7 @@ export function UserSearchAutocomplete({
                 <div
                   className={cn(
                     "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
-                    "bg-gradient-to-br from-orange-500 to-red-500"
+                    "bg-gradient-to-br from-brand to-brand-hover"
                   )}
                 >
                   <User size={14} className="text-white" />

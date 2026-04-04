@@ -49,7 +49,7 @@ export function ChatArea() {
     <div
       className={cn(
         "flex-1 flex flex-col h-full",
-        isDark ? "bg-gray-950" : "bg-white"
+        isDark ? "bg-[#0c0c0d]" : "bg-white"
       )}
     >
       {/* Chat Header */}
@@ -57,7 +57,7 @@ export function ChatArea() {
         <div
           className={cn(
             "flex items-center justify-between px-4 py-2 border-b flex-shrink-0",
-            isDark ? "border-gray-800" : "border-gray-200"
+            isDark ? "border-[rgba(255,255,255,0.06)]" : "border-[rgba(0,0,0,0.06)]"
           )}
         >
           <h2
@@ -76,7 +76,7 @@ export function ChatArea() {
             className={cn(
               "p-1.5 rounded-md transition-colors",
               isDark
-                ? "text-gray-400 hover:bg-gray-800"
+                ? "text-gray-400 hover:bg-[#222226]"
                 : "text-gray-500 hover:bg-gray-100"
             )}
             title="Export as Markdown"
@@ -135,7 +135,7 @@ export function ChatArea() {
       )}
 
       {/* Message Input Area - Fixed at bottom */}
-      <div className={cn("flex-shrink-0", isDark ? "bg-gray-950" : "bg-white")}>
+      <div className={cn("flex-shrink-0", isDark ? "bg-[#0c0c0d]" : "bg-white")}>
         <MessageInput />
       </div>
     </div>

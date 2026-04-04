@@ -27,10 +27,10 @@ function LoginContent() {
       <div
         className={cn(
           "min-h-screen flex items-center justify-center",
-          isDark ? "bg-gray-950" : "bg-gray-50"
+          isDark ? "bg-[#0c0c0d]" : "bg-[#f8f7f6]"
         )}
       >
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand" />
       </div>
     );
   }
@@ -53,8 +53,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-950">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
+        <div className="min-h-screen flex items-center justify-center bg-[#0c0c0d]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand" />
         </div>
       }
     >

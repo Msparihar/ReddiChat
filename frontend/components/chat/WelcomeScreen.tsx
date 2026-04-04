@@ -35,10 +35,10 @@ const categoryQueries: Record<string, string[]> = {
 };
 
 const categories = [
-  { icon: MessageSquare, label: "Ask Reddit", color: "text-orange-400" },
-  { icon: Search, label: "Search", color: "text-blue-400" },
-  { icon: Upload, label: "Upload", color: "text-green-400" },
-  { icon: Zap, label: "Quick Help", color: "text-yellow-400" },
+  { icon: MessageSquare, label: "Ask Reddit", color: "text-[var(--rc-text-secondary)]" },
+  { icon: Search, label: "Search", color: "text-[var(--rc-text-secondary)]" },
+  { icon: Upload, label: "Upload", color: "text-[var(--rc-text-secondary)]" },
+  { icon: Zap, label: "Quick Help", color: "text-[var(--rc-text-secondary)]" },
 ];
 
 export function WelcomeScreen() {
@@ -64,13 +64,13 @@ export function WelcomeScreen() {
     <div
       className={cn(
         "flex-1 flex flex-col items-center p-6 max-w-3xl mx-auto overflow-y-auto",
-        isDark ? "bg-gray-950" : "bg-white"
+        isDark ? "bg-[#0c0c0d]" : "bg-white"
       )}
     >
       <div className="text-center mb-8 mt-12">
         <h1
           className={cn(
-            "text-2xl font-normal mb-6",
+            "text-2xl font-normal mb-6 tracking-tight",
             isDark ? "text-gray-100" : "text-gray-900"
           )}
         >
@@ -92,19 +92,17 @@ export function WelcomeScreen() {
                   "flex items-center gap-2 px-3 py-2 rounded-md transition-colors border",
                   isActive
                     ? isDark
-                      ? "bg-purple-600/20 border-purple-500/50 text-purple-300"
-                      : "bg-purple-100 border-purple-300 text-purple-700"
+                      ? "bg-[rgba(255,69,0,0.15)] border-[rgba(255,69,0,0.3)] text-brand"
+                      : "bg-[rgba(255,69,0,0.08)] border-[rgba(255,69,0,0.2)] text-brand"
                     : isDark
-                    ? "bg-gray-800 hover:bg-gray-700 border-gray-700"
-                    : "bg-gray-50 hover:bg-gray-100 border-gray-200"
+                    ? "bg-[#1b1b1e] hover:bg-[#222226] border-[rgba(255,255,255,0.06)]"
+                    : "bg-white hover:bg-[#f0efed] border-[rgba(0,0,0,0.06)]"
                 )}
               >
                 <Icon
                   className={`w-4 h-4 ${
                     isActive
-                      ? isDark
-                        ? "text-purple-300"
-                        : "text-purple-700"
+                      ? "text-brand"
                       : category.color
                   }`}
                 />
@@ -112,9 +110,7 @@ export function WelcomeScreen() {
                   className={cn(
                     "text-sm font-normal",
                     isActive
-                      ? isDark
-                        ? "text-purple-300"
-                        : "text-purple-700"
+                      ? "text-brand"
                       : isDark
                       ? "text-gray-100"
                       : "text-gray-900"
@@ -134,10 +130,10 @@ export function WelcomeScreen() {
               key={index}
               onClick={() => handlePromptClick(prompt)}
               className={cn(
-                "text-left p-3 rounded-md transition-colors border",
+                "text-left p-3 rounded-md transition-colors",
                 isDark
-                  ? "bg-gray-800 hover:bg-gray-700 border-gray-700 hover:border-gray-600"
-                  : "bg-gray-50 hover:bg-gray-100 border-gray-200 hover:border-gray-300"
+                  ? "bg-[#1b1b1e] border border-[rgba(255,255,255,0.06)] hover:bg-[#222226] hover:border-[rgba(255,255,255,0.10)]"
+                  : "bg-white border-none shadow-[2px_4px_24px_0px_rgba(0,0,0,0.08)] hover:shadow-[3px_5px_30px_0px_rgba(0,0,0,0.14)] transition-shadow duration-300"
               )}
             >
               <span
@@ -154,7 +150,7 @@ export function WelcomeScreen() {
 
         {/* Upgrade Banner */}
         <div className="mt-8 text-center">
-          <button className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-full transition-colors text-white">
+          <button className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-brand to-[#ff6b35] hover:from-brand-hover hover:to-brand rounded-full transition-colors text-white">
             <Sparkles className="w-3.5 h-3.5" />
             <span className="text-sm font-normal">Upgrade to Pro</span>
           </button>

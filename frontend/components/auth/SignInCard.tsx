@@ -43,7 +43,7 @@ export function SignInCard({ callbackURL = "/chat" }: SignInCardProps) {
           )}
         >
           Welcome to{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
+          <span className="text-[var(--rc-brand)]">
             ReddiChat
           </span>
         </h1>

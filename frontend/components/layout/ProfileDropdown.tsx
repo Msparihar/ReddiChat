@@ -90,7 +90,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
         <button
           className={cn(
             "flex items-center w-full rounded-md p-1.5 transition-colors",
-            isDark ? "hover:bg-gray-800" : "hover:bg-gray-200",
+            isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]",
             isCollapsed ? "justify-center" : "gap-2.5"
           )}
           aria-label="Open profile menu"
@@ -102,7 +102,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
               className="w-7 h-7 rounded-full object-cover flex-shrink-0"
             />
           ) : (
-            <div className="w-7 h-7 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 bg-gradient-to-r from-brand to-[#ff6b35] rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-xs font-medium text-white">
                 {getUserInitials(user?.name)}
               </span>
@@ -129,7 +129,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
         align="start"
         className={cn(
           "w-72 z-50",
-          isDark ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+          isDark ? "bg-[#141416] border-gray-700" : "bg-white border-gray-200"
         )}
       >
         {/* Profile Header */}
@@ -138,7 +138,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
             {user?.image ? (
               <img src={user.image} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-brand to-[#ff6b35] rounded-full flex items-center justify-center">
                 <span className="text-sm font-medium text-white">{getUserInitials(user?.name)}</span>
               </div>
             )}
@@ -170,7 +170,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
                 <div
                   className={cn(
                     "h-2 rounded-full transition-all",
-                    usagePercent > 80 ? "bg-red-500" : usagePercent > 60 ? "bg-amber-500" : "bg-purple-500"
+                    usagePercent > 80 ? "bg-red-500" : usagePercent > 60 ? "bg-amber-500" : "bg-brand"
                   )}
                   style={{ width: `${usagePercent}%` }}
                 />
@@ -218,7 +218,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
                 placeholder={user?.name || "Your name"}
                 maxLength={50}
                 className={cn(
-                  "flex-1 text-sm px-2 py-1 rounded border focus:outline-none focus:ring-1 focus:ring-purple-500",
+                  "flex-1 text-sm px-2 py-1 rounded border focus:outline-none focus:ring-1 focus:ring-brand",
                   isDark ? "bg-gray-800 border-gray-600 text-gray-100" : "bg-white border-gray-300 text-gray-900"
                 )}
                 onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
@@ -227,7 +227,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
               <button
                 onClick={handleSaveName}
                 disabled={isSaving || !newName.trim()}
-                className="text-xs px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded disabled:opacity-50"
+                className="text-xs px-2 py-1 bg-brand hover:bg-brand-hover text-white rounded disabled:opacity-50"
               >
                 {isSaving ? "..." : "Save"}
               </button>
@@ -246,7 +246,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
               setNewName(user?.name || "");
               setIsEditingName(true);
             }}
-            className={cn("cursor-pointer", isDark ? "hover:bg-gray-800" : "hover:bg-gray-50")}
+            className={cn("cursor-pointer", isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]")}
           >
             <Settings className="w-4 h-4 mr-2" />
             <span className="text-sm">Edit display name</span>
@@ -259,7 +259,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
             e.preventDefault();
             toggleTheme();
           }}
-          className={cn("cursor-pointer", isDark ? "hover:bg-gray-800" : "hover:bg-gray-50")}
+          className={cn("cursor-pointer", isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]")}
         >
           {isDark ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
           <span className="text-sm">{isDark ? "Light mode" : "Dark mode"}</span>
@@ -273,7 +273,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
             e.preventDefault();
             setContactOpen(true);
           }}
-          className={cn("cursor-pointer", isDark ? "hover:bg-gray-800" : "hover:bg-gray-50")}
+          className={cn("cursor-pointer", isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]")}
         >
           <Mail className="w-4 h-4 mr-2" />
           <span className="text-sm">Contact for billing</span>
@@ -284,7 +284,7 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
         {/* Sign Out */}
         <DropdownMenuItem
           onSelect={() => handleLogout()}
-          className={cn("cursor-pointer text-red-500", isDark ? "hover:bg-gray-800" : "hover:bg-gray-50")}
+          className={cn("cursor-pointer text-red-500", isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]")}
         >
           <LogOut className="w-4 h-4 mr-2" />
           <span className="text-sm">Sign out</span>

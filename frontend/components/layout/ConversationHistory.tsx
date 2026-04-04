@@ -107,12 +107,10 @@ export function ConversationHistory({
             className={cn(
               "w-full p-2 rounded-md transition-colors flex items-center justify-center",
               currentThread?.id === thread.id
-                ? isDark
-                  ? "bg-gray-800"
-                  : "bg-gray-200"
+                ? "bg-brand-soft border-l-2 border-[rgba(255,69,0,0.4)]"
                 : isDark
-                ? "hover:bg-gray-800"
-                : "hover:bg-gray-200"
+                ? "hover:bg-[#222226]"
+                : "hover:bg-[#e8e7e5]"
             )}
             title={thread.title}
           >
@@ -137,7 +135,7 @@ export function ConversationHistory({
               key={i}
               className={cn(
                 "h-10 rounded",
-                isDark ? "bg-gray-800" : "bg-gray-200"
+                isDark ? "bg-[#222226]" : "bg-[#e8e7e5]"
               )}
             />
           ))}
@@ -158,9 +156,9 @@ export function ConversationHistory({
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search conversations..."
           className={cn(
-            "w-full text-xs pl-8 pr-3 py-2 rounded-md border focus:outline-none focus:ring-1 focus:ring-purple-500",
+            "w-full text-xs pl-8 pr-3 py-2 rounded-md border focus:outline-none focus:ring-1 focus:ring-brand",
             isDark
-              ? "bg-gray-800 border-gray-700 text-gray-200 placeholder:text-gray-500"
+              ? "bg-[#222226] border-gray-700 text-gray-200 placeholder:text-gray-500"
               : "bg-white border-gray-200 text-gray-800 placeholder:text-gray-400"
           )}
         />
@@ -182,12 +180,10 @@ export function ConversationHistory({
             className={cn(
               "group relative flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer transition-colors",
               currentThread?.id === thread.id
-                ? isDark
-                  ? "bg-gray-800"
-                  : "bg-gray-200"
+                ? "bg-brand-soft border-l-2 border-[rgba(255,69,0,0.4)]"
                 : isDark
-                ? "hover:bg-gray-800"
-                : "hover:bg-gray-200"
+                ? "hover:bg-[#222226]"
+                : "hover:bg-[#e8e7e5]"
             )}
             onClick={() => thread.id && handleSelectConversation(thread.id)}
           >
