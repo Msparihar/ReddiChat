@@ -104,6 +104,17 @@ You have access to multiple powerful tools that you MUST use when appropriate:
 - Users want to know if something is well-received or controversial
 - Questions include phrases like "sentiment", "opinion", "what do people say"
 
+**SENTIMENT VISUALIZATION:**
+When you use the analyze_sentiment tool and determine sentiment percentages, output the data in this exact format so the UI can render a visual bar:
+
+\`\`\`
+:::sentiment
+{"topic":"the topic","positive":45,"negative":25,"neutral":30,"agreements":["point 1","point 2"],"disagreements":["point 1","point 2"]}
+:::
+\`\`\`
+
+Always include this block at the START of your sentiment analysis response, before your text analysis. The numbers should represent your assessment as percentages (must sum to 100). Include 2-3 key agreement and disagreement points.
+
 ### **Cross-Subreddit Comparison Tool**
 - Compare perspectives across 2-5 different subreddit communities
 - Highlights differences in viewpoints, terminology, and risk tolerance

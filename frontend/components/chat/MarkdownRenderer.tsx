@@ -8,6 +8,7 @@ import { Copy, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
+import { SentimentBar } from "./SentimentBar";
 
 interface MarkdownRendererProps {
   content: string;
@@ -17,6 +18,32 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  // Extract :::sentiment blocks and replace with placeholders
+  const sentimentBlocks: Array<{
+    topic: string;
+    positive: number;
+    negative: number;
+    neutral: number;
+    agreements?: string[];
+    disagreements?: string[];
+  }> = [];
+  let processedContent = content;
+
+  const sentimentRegex = /:::sentiment\n([\s\S]*?)\n:::/g;
+  let match;
+  while ((match = sentimentRegex.exec(content)) !== null) {
+    try {
+      const data = JSON.parse(match[1]);
+      sentimentBlocks.push(data);
+      processedContent = processedContent.replace(
+        match[0],
+        `\n\n<SENTIMENT_PLACEHOLDER_${sentimentBlocks.length - 1}>\n\n`
+      );
+    } catch {
+      // Invalid JSON, leave as-is
+    }
+  }
 
   const copyToClipboard = async (code: string, id: string) => {
     try {
@@ -311,9 +338,51 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     ),
   };
 
+  // If no sentiment blocks, render normally
+  if (sentimentBlocks.length === 0) {
+    return (
+      <div className="markdown-content max-w-none">
+        <ReactMarkdown components={components as any}>{content}</ReactMarkdown>
+      </div>
+    );
+  }
+
+  // Split processed content at sentiment placeholders and render interleaved
+  const parts = processedContent.split(/<SENTIMENT_PLACEHOLDER_(\d+)>/);
+  const rendered: React.ReactNode[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 0) {
+      // Text segment
+      if (parts[i].trim()) {
+        rendered.push(
+          <ReactMarkdown key={`md-${i}`} components={components as any}>
+            {parts[i]}
+          </ReactMarkdown>
+        );
+      }
+    } else {
+      // Sentiment placeholder index
+      const idx = parseInt(parts[i], 10);
+      const block = sentimentBlocks[idx];
+      if (block) {
+        rendered.push(
+          <SentimentBar
+            key={`sentiment-${idx}`}
+            topic={block.topic}
+            positive={block.positive}
+            negative={block.negative}
+            neutral={block.neutral}
+            agreements={block.agreements}
+            disagreements={block.disagreements}
+          />
+        );
+      }
+    }
+  }
+
   return (
     <div className="markdown-content max-w-none">
-      <ReactMarkdown components={components as any}>{content}</ReactMarkdown>
+      {rendered}
     </div>
   );
 }
