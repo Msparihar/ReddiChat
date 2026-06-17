@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Paperclip, X, Check, ChevronDown, Lock } from "lucide-react";
+import { Send, Paperclip, X, Check, ChevronDown, Lock, Square } from "lucide-react";
 import { useChatStore } from "@/stores/chat-store";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
-import { AI_MODELS, DEFAULT_MODEL_ID } from "@/lib/ai/models";
-import { isModelAllowed, UserRole } from "@/lib/tiers";
+import { pickDefaultModelId } from "@/lib/ai/models";
+import { isModelAllowedForRole, UserRole } from "@/lib/tiers";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "motion/react";
 import { useUsage } from "@/hooks/use-usage";
+import { useModels } from "@/hooks/use-models";
 
 const OPENAI_ICON = (
   <>
@@ -66,36 +67,35 @@ const GEMINI_ICON = (
   </svg>
 );
 
-const MODEL_ICONS: Record<string, React.ReactNode> = {
-  "gemini-2.5-flash": GEMINI_ICON,
-  "gemini-3-flash": GEMINI_ICON,
-  "gemini-3.1-pro": GEMINI_ICON,
-  "gpt-5.4-mini": OPENAI_ICON,
-  "gpt-5.4": OPENAI_ICON,
-};
+function providerIcon(provider: "google" | "openai") {
+  return provider === "google" ? GEMINI_ICON : OPENAI_ICON;
+}
 
 export function MessageInput() {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const { sendMessage, isLoading, isStreaming, selectedModel, setSelectedModel } =
+  const { sendMessage, stopStreaming, isLoading, isStreaming, selectedModel, setSelectedModel } =
     useChatStore();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const currentModel = AI_MODELS.find((m) => m.id === selectedModel) || AI_MODELS[0];
-
+  const { data: models = [], isLoading: modelsLoading } = useModels();
   const { data: usageData, isLoading: usageLoading, isError: usageError } = useUsage();
-  const userRole = (usageData?.role || "free") as string;
+  const role = (usageData?.role ?? "free") as UserRole;
+
+  const allowed = models.filter((m) => isModelAllowedForRole(role, m));
+  const currentModel = models.find((m) => m.id === selectedModel) ?? models[0];
 
   useEffect(() => {
-    if (usageData?.role && selectedModel) {
-      const role = usageData.role as UserRole;
-      if (!isModelAllowed(role, selectedModel)) {
-        setSelectedModel(DEFAULT_MODEL_ID);
-      }
+    if (models.length === 0) return;
+    const allowedIds = models
+      .filter((m) => isModelAllowedForRole(role, m))
+      .map((m) => m.id);
+    if (!allowedIds.includes(selectedModel)) {
+      setSelectedModel(allowedIds[0] ?? pickDefaultModelId(models));
     }
-  }, [usageData?.role, selectedModel, setSelectedModel]);
+  }, [models, role, selectedModel, setSelectedModel]);
 
   const messagesRemaining = usageData
     ? usageData.limits.messages - usageData.usage.messages
@@ -247,8 +247,8 @@ export function MessageInput() {
                         transition={{ duration: 0.15 }}
                         className="flex items-center gap-1.5"
                       >
-                        {MODEL_ICONS[selectedModel]}
-                        <span>{currentModel.displayName}</span>
+                        {currentModel ? providerIcon(currentModel.provider) : null}
+                        <span>{currentModel?.displayName ?? (modelsLoading ? "Loading models…" : "Select model")}</span>
                         <ChevronDown className="w-3 h-3 opacity-50" />
                       </motion.div>
                     </AnimatePresence>
@@ -263,21 +263,21 @@ export function MessageInput() {
                       : "bg-white border-gray-200"
                   )}
                 >
-                  {AI_MODELS.map((model) => {
-                    const allowed = isModelAllowed(userRole as UserRole, model.id);
+                  {models.map((model) => {
+                    const isAllowed = isModelAllowedForRole(role, model);
                     return (
                       <DropdownMenuItem
                         key={model.id}
-                        onSelect={() => allowed && setSelectedModel(model.id)}
+                        onSelect={() => isAllowed && setSelectedModel(model.id)}
                         className={cn(
                           "flex items-center justify-between gap-2 cursor-pointer",
                           isDark ? "hover:bg-[#222226]" : "hover:bg-gray-50",
-                          !allowed && "opacity-50 cursor-not-allowed"
+                          !isAllowed && "opacity-50 cursor-not-allowed"
                         )}
-                        disabled={!allowed}
+                        disabled={!isAllowed}
                       >
                         <div className="flex items-center gap-2">
-                          {MODEL_ICONS[model.id]}
+                          {providerIcon(model.provider)}
                           <div className="flex flex-col">
                             <span className="text-sm">{model.displayName}</span>
                             <span className={cn("text-[10px]", isDark ? "text-gray-500" : "text-gray-400")}>
@@ -287,7 +287,7 @@ export function MessageInput() {
                         </div>
                         {selectedModel === model.id ? (
                           <Check className="w-4 h-4 text-brand" />
-                        ) : !allowed ? (
+                        ) : !isAllowed ? (
                           <Lock className="w-3.5 h-3.5 text-gray-400" />
                         ) : null}
                       </DropdownMenuItem>
@@ -356,24 +356,40 @@ export function MessageInput() {
               </div>
             </div>
 
-            {/* Send button */}
-            <button
-              type="submit"
-              disabled={!message.trim() || isLoading || isStreaming || usageExhausted}
-              className={cn(
-                "p-1.5 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
-                message.trim() && !isLoading && !isStreaming
-                  ? "bg-brand hover:bg-brand-hover text-white"
-                  : isDark
-                    ? "bg-[#1b1b1e] text-gray-500 cursor-not-allowed"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-              )}
-              title={isStreaming ? "AI is responding..." : "Send message"}
-              aria-label={isStreaming ? "AI is responding" : "Send message"}
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            {/* Stop / Send button */}
+            {isStreaming ? (
+              <button
+                type="button"
+                onClick={stopStreaming}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
+                  "bg-brand hover:bg-brand-hover text-white",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                )}
+                aria-label="Stop generating"
+                title="Stop generating"
+              >
+                <Square className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!message.trim() || isLoading || usageExhausted}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
+                  message.trim() && !isLoading
+                    ? "bg-brand hover:bg-brand-hover text-white"
+                    : isDark
+                      ? "bg-[#1b1b1e] text-gray-500 cursor-not-allowed"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                )}
+                title="Send message"
+                aria-label="Send message"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 

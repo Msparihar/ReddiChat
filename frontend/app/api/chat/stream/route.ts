@@ -16,7 +16,8 @@ import { eq, asc } from "drizzle-orm";
 import { uploadToS3, getFileType } from "@/lib/s3";
 import { logger, generateRequestId } from "@/lib/logger";
 import { checkDailyLimit, trackMessageUsage, trackUploadUsage } from "@/lib/usage";
-import { getTierLimits, isModelAllowed, UserRole } from "@/lib/tiers";
+import { getTierLimits, isModelAllowedForRole, UserRole } from "@/lib/tiers";
+import { resolveModel } from "@/lib/ai/model-registry";
 import { truncateHistory, estimateMessageTokens } from "@/lib/token-budget";
 import { sanitizeError } from "@/lib/error-handler";
 
@@ -106,8 +107,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Model access check
-    if (modelId && !isModelAllowed(userRole, modelId)) {
+    const resolvedModel = await resolveModel(modelId);
+
+    if (!isModelAllowedForRole(userRole, resolvedModel)) {
       return new Response(
         createSSEMessage({ type: "error", content: "Your plan does not include access to this model. Upgrade to Pro to unlock all models." }),
         {
@@ -159,7 +161,7 @@ export async function POST(request: NextRequest) {
       requestId,
       userId,
       endpoint: "/api/chat/stream",
-      model: modelId || "default",
+      model: resolvedModel.id,
       messageLength: message.length,
       fileCount: files.length,
       totalFileSize,
@@ -307,7 +309,7 @@ export async function POST(request: NextRequest) {
 
           const result = await streamChatResponse({
             messages: aiMessages,
-            modelId: modelId || undefined,
+            model: resolvedModel,
             onToolStart: (name) => {
               toolUsed = name;
               logger.info("Tool invoked", { requestId, userId, tool: name });
@@ -402,7 +404,7 @@ export async function POST(request: NextRequest) {
           logger.info("Chat request completed", {
             requestId,
             userId,
-            model: modelId || "default",
+            model: resolvedModel.id,
             inputChars: message.length,
             responseChars: fullContent.length,
             estimatedTokens: truncated.totalEstimatedTokens,

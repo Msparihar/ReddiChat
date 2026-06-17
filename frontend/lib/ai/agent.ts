@@ -8,7 +8,7 @@ import { analyzeSentimentTool } from "./tools/sentiment";
 import { compareSubredditsTool } from "./tools/compare";
 import { getTrendingTool } from "./tools/trending";
 import { summarizeThreadTool } from "./tools/summarize";
-import { getModelById, DEFAULT_MODEL_ID } from "./models";
+import { AIModel } from "./models";
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -18,17 +18,11 @@ const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-function getAIModel(modelId?: string) {
-  const config = getModelById(modelId || DEFAULT_MODEL_ID);
-  if (!config) {
-    return google("gemini-2.5-flash");
+function getAIModel(model: AIModel) {
+  if (model.provider === "openai") {
+    return openai(model.modelId);
   }
-
-  if (config.provider === "openai") {
-    return openai(config.modelId);
-  }
-
-  return google(config.modelId);
+  return google(model.modelId);
 }
 
 export const tools = {
@@ -44,16 +38,16 @@ export type ToolName = keyof typeof tools;
 
 export interface StreamChatOptions {
   messages: ModelMessage[];
-  modelId?: string;
+  model: AIModel;
   onToolStart?: (toolName: string) => void;
   onToolEnd?: (toolName: string, result: any) => void;
 }
 
 export async function streamChatResponse(options: StreamChatOptions) {
-  const { messages, modelId, onToolStart, onToolEnd } = options;
+  const { messages, model, onToolStart, onToolEnd } = options;
 
   const result = streamText({
-    model: getAIModel(modelId),
+    model: getAIModel(model),
     system: SYSTEM_PROMPT,
     messages,
     tools,
