@@ -5,7 +5,7 @@ import { useSession, signOut } from "@/lib/auth/client";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useUsage } from "@/hooks/use-usage";
 import { cn } from "@/lib/utils";
-import { LogOut, Settings, Sun, Moon, Mail, Crown, ChevronUp } from "lucide-react";
+import { LogOut, Settings, Sun, Moon, Mail, Crown, ChevronUp, KeyRound } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,9 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
 
   const user = session?.user;
 
@@ -68,6 +71,39 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
       toast.error("Failed to update name");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSavePassword = async () => {
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    setIsSavingPassword(true);
+    try {
+      const res = await fetch("/api/user/set-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ newPassword }),
+      });
+      if (res.status === 401) {
+        toast.error("Session expired. Please sign in again.");
+        await signOut();
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to set password");
+        return;
+      }
+      toast.success("Password set — you can now sign in with email & password");
+      setIsEditingPassword(false);
+      setNewPassword("");
+    } catch {
+      toast.error("Failed to set password");
+    } finally {
+      setIsSavingPassword(false);
     }
   };
 
@@ -244,12 +280,61 @@ export function ProfileDropdown({ isCollapsed }: ProfileDropdownProps) {
             onSelect={(e) => {
               e.preventDefault();
               setNewName(user?.name || "");
+              setIsEditingPassword(false);
               setIsEditingName(true);
             }}
             className={cn("cursor-pointer", isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]")}
           >
             <Settings className="w-4 h-4 mr-2" />
             <span className="text-sm">Edit display name</span>
+          </DropdownMenuItem>
+        )}
+
+        {/* Password Editor */}
+        {isEditingPassword ? (
+          <div className="px-3 py-2">
+            <div className={cn("text-xs font-medium mb-1.5", isDark ? "text-gray-400" : "text-gray-500")}>
+              New Password
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Min. 8 characters"
+                className={cn(
+                  "flex-1 text-sm px-2 py-1 rounded border focus:outline-none focus:ring-1 focus:ring-brand",
+                  isDark ? "bg-gray-800 border-gray-600 text-gray-100" : "bg-white border-gray-300 text-gray-900"
+                )}
+                onKeyDown={(e) => e.key === "Enter" && handleSavePassword()}
+                autoFocus
+              />
+              <button
+                onClick={handleSavePassword}
+                disabled={isSavingPassword || newPassword.length < 8}
+                className="text-xs px-2 py-1 bg-brand hover:bg-brand-hover text-white rounded disabled:opacity-50"
+              >
+                {isSavingPassword ? "..." : "Save"}
+              </button>
+              <button
+                onClick={() => { setIsEditingPassword(false); setNewPassword(""); }}
+                className={cn("text-xs px-2 py-1 rounded", isDark ? "hover:bg-gray-700 text-gray-400" : "hover:bg-gray-100 text-gray-500")}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setIsEditingName(false);
+              setIsEditingPassword(true);
+            }}
+            className={cn("cursor-pointer", isDark ? "hover:bg-[#222226]" : "hover:bg-[#e8e7e5]")}
+          >
+            <KeyRound className="w-4 h-4 mr-2" />
+            <span className="text-sm">Set / change password</span>
           </DropdownMenuItem>
         )}
 

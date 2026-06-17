@@ -1,8 +1,10 @@
 "use client";
 
-import { signIn } from "@/lib/auth/client";
+import { useState } from "react";
+import { signIn, signUp } from "@/lib/auth/client";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface SignInCardProps {
   callbackURL?: string;
@@ -11,6 +13,13 @@ interface SignInCardProps {
 export function SignInCard({ callbackURL = "/chat" }: SignInCardProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
     await signIn.social({
@@ -25,6 +34,36 @@ export function SignInCard({ callbackURL = "/chat" }: SignInCardProps) {
       callbackURL,
     });
   };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      if (mode === "signin") {
+        const result = await signIn.email({ email, password, callbackURL });
+        if (result?.error) {
+          setError(result.error.message ?? "Sign in failed");
+        }
+      } else {
+        const result = await signUp.email({ email, password, name, callbackURL });
+        if (result?.error) {
+          setError(result.error.message ?? "Sign up failed");
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputClass = cn(
+    "w-full text-sm px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[var(--rc-brand)]",
+    isDark
+      ? "bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500"
+      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+  );
 
   return (
     <div
@@ -57,8 +96,105 @@ export function SignInCard({ callbackURL = "/chat" }: SignInCardProps) {
         </p>
       </div>
 
+      <form onSubmit={handleEmailSubmit} className="space-y-3 mb-4">
+        {mode === "signup" && (
+          <div>
+            <label htmlFor="name" className="sr-only">Full name</label>
+            <input
+              id="name"
+              type="text"
+              placeholder="Full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className={inputClass}
+            />
+          </div>
+        )}
+        <div>
+          <label htmlFor="email" className="sr-only">Email address</label>
+          <input
+            id="email"
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="password" className="sr-only">Password</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className={inputClass}
+          />
+          {mode === "signin" && (
+            <div className="flex justify-end mt-1">
+              <Link
+                href="/forgot-password"
+                className={cn(
+                  "text-xs hover:underline",
+                  isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                Forgot password?
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <p className="text-sm text-red-500">{error}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2.5 rounded-lg font-medium text-sm text-white bg-[var(--rc-brand)] hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {loading ? "..." : mode === "signin" ? "Sign in" : "Create account"}
+        </button>
+      </form>
+
+      <p className={cn("text-xs text-center mb-4", isDark ? "text-gray-500" : "text-gray-400")}>
+        {mode === "signin" ? (
+          <>Don&apos;t have an account?{" "}
+            <button
+              type="button"
+              onClick={() => { setMode("signup"); setError(null); }}
+              className="underline hover:opacity-80"
+            >
+              Sign up
+            </button>
+          </>
+        ) : (
+          <>Already have an account?{" "}
+            <button
+              type="button"
+              onClick={() => { setMode("signin"); setError(null); }}
+              className="underline hover:opacity-80"
+            >
+              Sign in
+            </button>
+          </>
+        )}
+      </p>
+
+      <div className="relative flex items-center my-4">
+        <div className={cn("flex-1 border-t", isDark ? "border-gray-700" : "border-gray-200")} />
+        <span className={cn("px-3 text-xs", isDark ? "text-gray-500" : "text-gray-400")}>or</span>
+        <div className={cn("flex-1 border-t", isDark ? "border-gray-700" : "border-gray-200")} />
+      </div>
+
       <div className="space-y-4">
         <button
+          type="button"
           onClick={handleGoogleSignIn}
           className={cn(
             "w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors",
@@ -89,6 +225,7 @@ export function SignInCard({ callbackURL = "/chat" }: SignInCardProps) {
         </button>
 
         <button
+          type="button"
           onClick={handleGitHubSignIn}
           className={cn(
             "w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors",

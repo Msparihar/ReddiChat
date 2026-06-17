@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createAuthMiddleware } from "better-auth/api";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { sendLoginEmail } from "@/lib/email";
+import { sendLoginEmail, sendResetPasswordEmail } from "@/lib/email";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -20,7 +20,20 @@ export const auth = betterAuth({
     },
   },
   emailAndPassword: {
-    enabled: false,
+    enabled: true,
+    minPasswordLength: 8,
+    autoSignIn: true,
+    requireEmailVerification: false,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      await sendResetPasswordEmail(user.email, user.name, url);
+    },
+  },
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google", "github"],
+    },
   },
   socialProviders: {
     google: {
@@ -46,8 +59,11 @@ export const auth = betterAuth({
   ],
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
-      // Send login notification email after social sign-in
-      if (ctx.path.startsWith("/sign-in/social") || ctx.path.startsWith("/callback")) {
+      if (
+        ctx.path.startsWith("/sign-in/social") ||
+        ctx.path.startsWith("/callback") ||
+        ctx.path.startsWith("/sign-in/email")
+      ) {
         const newSession = ctx.context.newSession;
         if (newSession?.user?.email && newSession?.user?.name) {
           sendLoginEmail(newSession.user.email, newSession.user.name).catch(console.error);

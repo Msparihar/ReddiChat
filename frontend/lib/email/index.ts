@@ -37,7 +37,7 @@ export async function sendLoginEmail(
       subject: "New login to your ReddiChat account",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #FF4500;">Hi ${userName}!</h2>
+          <h2 style="color: #FF4500;">Hi ${escapeHtml(userName)}!</h2>
           <p>We noticed a new login to your ReddiChat account.</p>
           <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 0;"><strong>Time:</strong> ${formattedDate}</p>
@@ -54,6 +54,44 @@ export async function sendLoginEmail(
     console.log(`Login email sent to ${userEmail}`);
   } catch (error) {
     console.error("Failed to send login email:", error);
+  }
+}
+
+export async function sendResetPasswordEmail(
+  userEmail: string,
+  userName: string,
+  url: string
+): Promise<void> {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    console.warn("Email credentials not configured, skipping reset password email");
+    return;
+  }
+
+  const safeName = escapeHtml(userName);
+
+  try {
+    await transporter.sendMail({
+      from: `"ReddiChat" <${process.env.SMTP_USER}>`,
+      to: userEmail,
+      subject: "Reset your ReddiChat password",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #FF4500;">Hi ${safeName}!</h2>
+          <p>We received a request to reset your ReddiChat password.</p>
+          <div style="margin: 30px 0;">
+            <a href="${url}" style="background: #FF4500; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">Reset password</a>
+          </div>
+          <p style="color: #666; font-size: 13px;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+          <p style="color: #666; font-size: 12px;">
+            This email was sent from <a href="https://reddichat.manishsingh.tech">ReddiChat</a>
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Reset password email sent to ${userEmail}`);
+  } catch (error) {
+    console.error("Failed to send reset password email:", error);
   }
 }
 
